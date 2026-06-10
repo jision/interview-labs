@@ -1,4 +1,4 @@
-# DSA Study Lab
+# Interview Labs
 
 Interactive data-structures & algorithms revision site. Four tools, one landing hub,
 deployed as a single static site to GitHub Pages. Built with **Vite + React + Tailwind v4**.

@@ -52,7 +52,7 @@ function Landing() {
           Interactive DSA · interview prep
         </div>
         <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
-          DSA Study Lab
+          Interview Labs
         </h1>
         <p className="text-lg text-ink-dim max-w-2xl leading-relaxed mb-12">
           Four interactive tools covering the full interview surface — from the data
