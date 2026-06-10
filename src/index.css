@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+/* ──────────────────────────────────────────────────────────────
+   Design tokens — single source of truth for the whole site.
+   Tailwind v4 turns each token into a utility automatically, e.g.
+   --color-lab → bg-lab / text-lab / border-lab.
+   ────────────────────────────────────────────────────────────── */
+@theme {
+  /* Surfaces (dark theme) */
+  --color-bg: #0c0e14;
+  --color-surface: #15171f;
+  --color-surface-2: #1c1f2a;
+  --color-line: rgba(255, 255, 255, 0.08);
+  --color-line-strong: rgba(255, 255, 255, 0.16);
+
+  /* Text */
+  --color-ink: #eef1f7;
+  --color-ink-dim: #a8b0bf;
+  --color-ink-faint: #6b7480;
+
+  /* Per-tool accents (from the original site) */
+  --color-lab: #38e0d6;
+  --color-bench: #e8553b;
+  --color-ident: #ffcf4a;
+  --color-staff: #d6a94c;
+
+  /* Semantic accents for callouts */
+  --color-tip: #4ade80;
+  --color-warn: #fbbf24;
+  --color-trap: #f87171;
+
+  /* Fonts */
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Thin, dark scrollbars so panels don't get jarring light bars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-strong) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--color-line-strong);
+  border-radius: 8px;
+}
+
+/* Respect users who prefer no motion — visualizers fall back to instant */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
