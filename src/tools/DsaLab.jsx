@@ -202,7 +202,8 @@ front = q.popleft()  # dequeue, O(1)  ← the whole point`}
       <Block eyebrow="cost model" title="Complexity">
         <OpTable
           rows={[
-            { op: "stack push / pop (list)", avg: "O(1)", avgTone: "good", worst: "O(1)", worstTone: "good", why: "Amortized, at the end of the array." },
+            { op: "stack push (list)", avg: "O(1)", avgTone: "good", worst: "O(n)", worstTone: "bad", why: "Amortized O(1); the worst case is the backing-array resize + copy." },
+            { op: "stack pop (list)", avg: "O(1)", avgTone: "good", worst: "O(1)", worstTone: "good", why: "Just drops the last slot." },
             { op: "queue enqueue/dequeue (deque)", avg: "O(1)", avgTone: "good", worst: "O(1)", worstTone: "good", why: "Deque is O(1) at both ends." },
             { op: "queue via list.pop(0)", avg: "O(n)", avgTone: "bad", worst: "O(n)", worstTone: "bad", why: "Shifts every element — avoid." },
             { op: "peek (either)", avg: "O(1)", avgTone: "good", worst: "O(1)", worstTone: "good", why: "Look at one end, no removal." },
@@ -326,6 +327,31 @@ def inorder(node):       # yields values in SORTED order
         yield node.val
         yield from inorder(node.right)`}
         />
+        <Callout kind="tip" title="Deletion: the case everyone fumbles">
+          Search and insert are easy; <strong>delete</strong> has three cases. A <em>leaf</em>: just remove
+          it. <em>One child</em>: splice the child up into its place. <em>Two children</em>: you can't just
+          yank the node — replace its value with its <strong>in-order successor</strong> (the minimum of the
+          right subtree), then delete that successor, which by definition has at most one child.
+        </Callout>
+        <CodeBlock
+          title="python · BST delete"
+          code={`def delete(root, key):
+    if not root:
+        return None
+    if key < root.val:
+        root.left = delete(root.left, key)
+    elif key > root.val:
+        root.right = delete(root.right, key)
+    else:                                # found it
+        if not root.left:  return root.right   # leaf or right-only
+        if not root.right: return root.left    # left-only
+        succ = root.right
+        while succ.left:                 # in-order successor = min of right subtree
+            succ = succ.left
+        root.val = succ.val
+        root.right = delete(root.right, succ.val)
+    return root`}
+        />
         <Callout kind="trap" title="Unbalanced = degenerate">
           Insert already-sorted data and the BST becomes a straight line — a linked list in disguise, with
           O(n) operations. Press <strong>"insert sorted"</strong> in the demo to watch it skew. Production
@@ -373,8 +399,8 @@ function Heap() {
         <p className="text-ink-dim leading-relaxed mb-1">
           Index math replaces pointers: node <code className="font-mono">i</code>'s children are{" "}
           <code className="font-mono">2i+1</code> and <code className="font-mono">2i+2</code>, its parent is{" "}
-          <code className="font-mono">(i-1)//2</code>. Insert appends then <em>sifts up</em>; extract swaps
-          the root with the last element then <em>sifts down</em> — each O(log n) because the tree is
+          <code className="font-mono">(i-1)//2</code>. Insert appends then <em>sifts up</em>; extract moves
+          the last element into the root then <em>sifts down</em> — each O(log n) because the tree is
           always balanced.
         </p>
         <CodeBlock
@@ -391,7 +417,6 @@ heapq.heappush(h, -x)
 largest = -heapq.heappop(h)
 
 # top-K largest in O(n log k):
-import heapq
 heapq.nlargest(k, nums)`}
         />
         <Callout kind="tip" title="Build a heap in O(n), not O(n log n)">
@@ -527,7 +552,7 @@ class Trie:
             { op: "insert(word)", avg: "O(L)", avgTone: "good", worst: "O(L)", worstTone: "good", why: "One step per character; L = word length, independent of word count." },
             { op: "search(word)", avg: "O(L)", avgTone: "good", worst: "O(L)", worstTone: "good", why: "Same walk; then check the end flag." },
             { op: "starts_with(prefix)", avg: "O(L)", avgTone: "good", worst: "O(L)", worstTone: "good", why: "Walk the prefix; existence of the node is the answer." },
-            { op: "completions(prefix)", avg: "O(L + k)", avgTone: "ok", worst: "O(L + k)", worstTone: "ok", why: "Walk to the node (L), then emit k characters across the matches." },
+            { op: "completions(prefix)", avg: "O(L + m)", avgTone: "ok", worst: "O(L + m)", worstTone: "ok", why: "Walk to the node (L), then emit m = total characters emitted across all matches." },
             { op: "space", avg: "O(N·L)", avgTone: "ok", worst: "O(N·L)", worstTone: "ok", why: "Up to N×L nodes (one per character, shared across common prefixes); the dict per node stores only real children. A fixed Σ-sized array per node would add a ×Σ factor." },
           ]}
           cols={["Operation", "Average", "Worst", "Why"]}

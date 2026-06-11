@@ -46,7 +46,7 @@ export default function BinarySearchViz() {
       const nm = nlo <= hi ? Math.floor((nlo + hi) / 2) : nlo;
       setMid(nm);
       setNote(
-        `nums[${m}] = ${v} < ${TARGET}: target is to the RIGHT → lo = mid + 1 = ${nlo}. Lower half (indices ${0}..${m}) discarded.`
+        `nums[${m}] = ${v} < ${TARGET}: target is to the RIGHT → lo = mid + 1 = ${nlo}. Lower half (indices ${lo}..${m}) discarded.`
       );
     } else {
       const nhi = m - 1;

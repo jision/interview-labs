@@ -250,7 +250,9 @@ class MedianFinder:
           If the stream is bounded to a small integer range, a <strong>counting / Fenwick tree</strong>{" "}
           finds the median by rank in O(log range) and supports removals — handy for a{" "}
           <em>sliding-window</em> median, where the two-heap version struggles because heaps can't
-          delete an arbitrary middle element cheaply (you'd need lazy deletion with a removed-set).
+          delete an arbitrary middle element cheaply (you'd need lazy deletion with a removed-set). For a
+          FIXED-size sliding-window median, the textbook approaches are two heaps with lazy deletion (a
+          dict of to-be-removed elements + a running balance), or a multiset / Fenwick tree / SortedList.
         </Callout>
       </Block>
     </>
@@ -550,8 +552,9 @@ function Bloom() {
           all <em>k</em> of a query's bits set, giving the rate{" "}
           <code className="font-mono">(1 − e^(−kn/m))^k</code>. Minimizing that over <em>k</em> yields
           the optimal <code className="font-mono">k = (m/n)·ln 2</code>, at which point about{" "}
-          <strong>half the bits are set</strong> and each extra bit/element drops the error rate by
-          roughly a factor of 2.
+          <strong>half the bits are set</strong> and each extra bit per element drops the false-positive
+          rate by ~40% (the rate is <code className="font-mono">0.6185^(m/n)</code>, so one more bit
+          multiplies it by ~0.62).
         </Callout>
         <CodeBlock
           title="python · bit array + k derived hashes"
@@ -570,7 +573,7 @@ class BloomFilter:
         # Kirsch-Mitzenmacher double hashing: g_i(x) = h1 + i*h2  (deterministic)
         d = sha256(str(item).encode()).digest()
         h1 = int.from_bytes(d[:8], "big")
-        h2 = int.from_bytes(d[8:16], "big") | 1      # h2 odd: cheap way to bias toward a nonzero, well-spread stride
+        h2 = int.from_bytes(d[8:16], "big") | 1      # h2 made odd so the stride is never 0 (keeps the k indices from collapsing onto one bit)
         for i in range(self.k):
             yield (h1 + i * h2) % self.m
 

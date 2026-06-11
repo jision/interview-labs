@@ -42,12 +42,12 @@ const PHRASES = [
   {
     chip: "min / max so far",
     patterns: ["Greedy (running extreme)", "Monotonic stack"],
-    why: "Track one running value (Kadane, best-buy-sell), or a monotonic stack for next-greater queries.",
+    why: "Track one running value as you scan — Kadane (max subarray) or best-time-to-buy-sell. A separate tell, “next greater / smaller element,” is the one that points to a monotonic stack.",
   },
   {
     chip: "detect a cycle",
     patterns: ["Fast & slow pointers", "Union-Find / DFS colors"],
-    why: "Linked list: Floyd's tortoise & hare. Graph: union-find on edges, or DFS with gray/black coloring.",
+    why: "Linked list: Floyd's tortoise & hare. Undirected graph: union-find (a union of two already-connected nodes = a cycle). Directed graph: DFS with gray/black coloring (a back-edge to a gray/in-progress node = a cycle) — union-find won't catch directed cycles.",
   },
   {
     chip: "ranges / intervals",

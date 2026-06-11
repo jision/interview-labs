@@ -10,7 +10,7 @@ const TRICKS = [
     name: "Prefix sums",
     cat: "Arrays",
     tell: "Many range-sum / range-average queries over a fixed array.",
-    how: "pre[i] = pre[i-1] + a[i]; any range sum = pre[r] − pre[l-1] in O(1).",
+    how: "1-indexed: pre[i] = pre[i-1] + a[i]; any range sum = pre[r] − pre[l-1] in O(1).",
   },
   {
     name: "Difference array",

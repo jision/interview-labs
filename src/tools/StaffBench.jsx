@@ -36,7 +36,7 @@ function Lru() {
   return (
     <>
       <Lede>
-        "Design a cache that holds the N most-recently-used items and evicts the rest." The classic
+        "Design a cache that holds the N most-recently-used items and evicts the rest." (LeetCode 146) The classic
         answer is a <strong>hash map + doubly linked list</strong>: the map gives O(1) lookup, the
         list maintains recency order, and a node moves to the front on every touch. Get and put are
         both O(1).
@@ -106,7 +106,7 @@ class LRUCache:
       <Block eyebrow="judgment" title="When LRU is the wrong policy">
         <Callout kind="note" title="Eviction policy is a real choice">
           LRU assumes the recent past predicts the near future — great for general workloads. But{" "}
-          <strong>LFU</strong> (least-frequently-used) beats it when a few keys are hot forever, and a
+          <strong>LFU</strong> (least-frequently-used; LeetCode 460) beats it when a few keys are hot forever, and a
           one-off scan of cold data will flush an LRU cache (cache pollution). Production caches like
           Redis offer LRU, LFU, and TTL. Naming the alternative — "I'd start with LRU, switch to LFU if
           the access pattern is skewed" — is the staff-level signal.
@@ -207,7 +207,7 @@ function TrieTopic() {
   return (
     <>
       <Lede>
-        "Build autocomplete for a search box." A <strong>trie</strong> (prefix tree) stores words by
+        "Build autocomplete for a search box." (LeetCode 208; 211 for wildcard search) A <strong>trie</strong> (prefix tree) stores words by
         shared prefixes: each edge is a character, each path from the root spells a prefix. Finding all
         completions of a prefix is <strong>O(L)</strong> to walk the prefix plus the cost of listing the
         matches — independent of how many words you've stored.
@@ -272,7 +272,7 @@ class Trie:
             { op: "insert(word)", avg: "O(L)", avgTone: "good", worst: "O(L)", worstTone: "good", why: "One node per character; L = word length." },
             { op: "search(word)", avg: "O(L)", avgTone: "good", worst: "O(L)", worstTone: "good", why: "Walk the path; no scan of other words." },
             { op: "starts_with(prefix)", avg: "O(L)", avgTone: "good", worst: "O(L)", worstTone: "good", why: "The trie's whole reason to exist." },
-            { op: "autocomplete(prefix)", avg: "O(L + k)", avgTone: "ok", worst: "O(L + k)", worstTone: "ok", why: "Walk prefix, then DFS the k matches under it." },
+            { op: "autocomplete(prefix)", avg: "O(L + total length of all completions)", avgTone: "ok", worst: "O(L + total length of all completions)", worstTone: "ok", why: "Walk the prefix (O(L)), then DFS emits every character of every completion — O(total length of all matches), not the match count." },
           ]}
         />
       </Block>
@@ -387,10 +387,12 @@ def worker():
           bytecode at a time. People wrongly conclude "so Python threads are safe." They aren't.
         </p>
         <Callout kind="trap" title="The GIL does NOT make += 1 atomic">
-          The GIL is released between bytecode instructions, and{" "}
-          <code className="font-mono">count += 1</code> compiles to multiple bytecodes (LOAD, ADD,
-          STORE). A thread switch can land right in the middle — exactly the lost update above. You still
-          need a lock for read-modify-write on shared state.
+          The GIL can be released at bytecode boundaries — since CPython 3.2 the interpreter switches
+          threads on a time interval (<code className="font-mono">sys.setswitchinterval</code>, ~5 ms by
+          default), not after every bytecode. Because{" "}
+          <code className="font-mono">count += 1</code> compiles to several bytecodes (LOAD, ADD, STORE),
+          a thread switch can land mid-update and lose a write. You still need a lock for
+          read-modify-write on shared state.
         </Callout>
         <Callout kind="note" title="What the GIL actually means">
           It prevents true parallelism for CPU-bound Python code (threads time-slice one core), so for
@@ -494,14 +496,14 @@ function Estimation() {
             { op: "L2 cache reference", avg: "~4 ns", avgTone: "good", why: "Roughly 4× L1." },
             { op: "Mutex lock / unlock", avg: "~17 ns", avgTone: "good", why: "An uncontended lock is cheap." },
             { op: "Main memory (RAM)", avg: "~100 ns", avgTone: "ok", why: "~100× L1 — a cache miss is expensive." },
-            { op: "SSD random read", avg: "~16 µs", avgTone: "ok", why: "~150× RAM. Flash is fast but not RAM-fast." },
+            { op: "SSD random read", avg: "~16 µs", avgTone: "ok", why: "~160× RAM. Flash is fast but not RAM-fast." },
             { op: "Network RT in datacenter", avg: "~0.5 ms", avgTone: "ok", why: "~500 µs. Same building, different machine." },
             { op: "Disk (HDD) seek", avg: "~10 ms", avgTone: "bad", why: "Spinning rust. ~100,000× RAM — avoid random disk I/O." },
             { op: "Network RT CA↔Netherlands", avg: "~150 ms", avgTone: "bad", why: "Speed of light is real. Cross-continent dominates everything." },
           ]}
         />
         <Callout kind="tip" title="The one ratio to internalize">
-          Memory ~100 ns, SSD ~16 µs (~150×), disk seek ~10 ms (~100,000×), cross-continent ~150 ms.
+          Memory ~100 ns, SSD ~16 µs (~160×), disk seek ~10 ms (~100,000×), cross-continent ~150 ms.
           Each tier is roughly 100–1000× slower than the one above. "Is this in RAM, on SSD, on disk, or
           over the network?" answers most performance questions.
         </Callout>

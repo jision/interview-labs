@@ -307,7 +307,7 @@ function BinarySearch() {
             lo = mid + 1
         else:
             hi = mid              # NOT mid-1: keep mid as a candidate
-    return lo                     # == len(nums) if target is biggest`}
+    return lo                     # == len(nums) if target exceeds every element`}
         />
         <CodeBlock
           title="python · binary search on the answer (min feasible value)"
@@ -320,6 +320,31 @@ function BinarySearch() {
         else:
             lo = mid + 1          # mid too small; go higher
     return lo                     # smallest x with feasible(x) == True`}
+        />
+        <p className="text-ink-dim leading-relaxed mb-1">
+          The trickiest variant: a <strong>rotated</strong> sorted array. The array isn&apos;t globally
+          ordered, but after any split at least one half still is — so compare against the{" "}
+          <em>sorted</em> half to decide whether the target lives there, and recurse into the right side.
+        </p>
+        <CodeBlock
+          title="python · search in a rotated sorted array"
+          code={`def search_rotated(nums, target):
+    lo, hi = 0, len(nums) - 1
+    while lo <= hi:
+        mid = (lo + hi) // 2
+        if nums[mid] == target:
+            return mid
+        if nums[lo] <= nums[mid]:          # left half is sorted
+            if nums[lo] <= target < nums[mid]:
+                hi = mid - 1
+            else:
+                lo = mid + 1
+        else:                              # right half is sorted
+            if nums[mid] < target <= nums[hi]:
+                lo = mid + 1
+            else:
+                hi = mid - 1
+    return -1`}
         />
         <Callout kind="tip" title="Reach for this when you see…">
           a <strong>sorted</strong> array; &quot;find / insert position&quot;; &quot;first / last

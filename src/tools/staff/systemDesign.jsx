@@ -254,9 +254,10 @@ function Sharding() {
         <p className="text-ink-dim leading-relaxed mb-1">
           <strong>Consistent hashing</strong> fixes it. Hash both the keys and the nodes onto the same
           circular space (a "ring", e.g. 0…2³²). A key is owned by the first node clockwise from it.
-          Now adding or removing a node only re-homes the keys in <em>that node's arc</em> — about{" "}
-          <strong>K/N keys move</strong> (K keys, N nodes), not 80% of them. The visualizer above adds
-          and removes nodes so you can watch only a slice re-home.
+          Now adding or removing a node re-homes only the keys in <em>that node's arc</em> — on average{" "}
+          <strong>K/N of the keys</strong>, where N is the resulting node count (going 4 → 5, that's
+          ~K/5 = 20%, matching the table), not 80% of them. The visualizer above adds and removes nodes
+          so you can watch only a slice re-home.
         </p>
         <CodeBlock
           title="text · the K/N property"

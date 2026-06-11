@@ -51,6 +51,13 @@ function Constraints() {
           enumerate — that's a hint for math, binary exponentiation, or digit DP over its ~18 digits, never
           a loop to n.
         </Callout>
+        <Callout kind="warn" title="In Python, shave a zero off">
+          The <code className="font-mono">~10⁸ ops/sec</code> envelope is the C++-flavored convention. Pure
+          CPython runs roughly <strong>10–100× slower</strong>, so in Python a safer working budget is closer
+          to <code className="font-mono">~10⁶–10⁷</code> ops/sec — drop a zero or two off the feasible{" "}
+          <code className="font-mono">n</code>. The <em>complexity-class</em> reasoning (which technique
+          fits) is unchanged; only the constant shifts.
+        </Callout>
       </Block>
 
       <Block eyebrow="quick reference" title="Bound → ceiling, at a glance">
@@ -148,7 +155,7 @@ function Budget() {
                   n: "≈ 10⁸",
                 },
                 {
-                  tone: "bad",
+                  tone: "ok",
                   cls: "O(n log n)",
                   who: "Comparison sort, heap-of-n, divide-and-conquer (merge sort), sweep line, BIT/segment tree.",
                   n: "≈ 10⁶–10⁷",
