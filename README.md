@@ -20,7 +20,7 @@ All four tools are built and interactive. Highlights:
 - **DSA Lab** — Dynamic Array, Linked List, Stack & Queue, Hash Table, BST, Heap, **Trie**, **Graph** (BFS/DFS), each with a live visualizer + Python internals.
 - **Interview Bench** — Two Pointers, Sliding Window, Fast/Slow, Binary Search, BFS/DFS, Backtracking, DP atlas, Greedy, Heap/Top-K, Monotonic Stack, Intervals. Interactive demos for sliding window, two pointers, binary search, and monotonic stack.
 - **The Identifier** — an interactive Constraint Decoder (input size → target Big-O), Pattern Sniffer, Complexity Budget, a filterable Tricks Vault, and Disambiguation flashcards.
-- **The Staff Bench** — interactive LRU Cache, Token-Bucket rate limiter, and a race-condition demo (with/without lock), plus trade-offs and back-of-envelope estimation.
+- **The Staff Bench** — ~25 topics across four groups: **Design a DS** (LRU, LFU, rate limiter, trie, min-stack, median-of-stream, Insert/Delete/GetRandom, time-based KV, Twitter feed, Bloom filter), **Concurrency** (primitives, the classic threading problems, producer/consumer, deadlock & dining philosophers, threads vs async vs processes), **System Design** (scaling, caching, sharding, replication & consistency, queues, SQL vs NoSQL), and **Judgment** (trade-offs, capacity estimation, numbers to memorize). Interactive demos: LRU, token bucket, race condition, Insert/Delete/GetRandom, Bloom filter, consistent-hashing ring, producer/consumer.
 
 Every tool reuses the same design system (`src/components/`), so they look and behave consistently.
 

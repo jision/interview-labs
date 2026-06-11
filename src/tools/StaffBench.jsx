@@ -7,6 +7,11 @@ import TokenBucketViz from "./staff/TokenBucketViz.jsx";
 import TrieViz from "./staff/TrieViz.jsx";
 import RaceConditionViz from "./staff/RaceConditionViz.jsx";
 import EstimatorViz from "./staff/EstimatorViz.jsx";
+// Expansion modules — each exports a TOPICS array + a CONTENT map.
+import { EXTRA_DESIGN_TOPICS, EXTRA_DESIGN_CONTENT } from "./staff/designExtra.jsx";
+import { CONCURRENCY_EXTRA_TOPICS, CONCURRENCY_EXTRA_CONTENT } from "./staff/concurrencyExtra.jsx";
+import { SYSTEM_TOPICS, SYSTEM_CONTENT } from "./staff/systemDesign.jsx";
+import { JUDGMENT_EXTRA_TOPICS, JUDGMENT_EXTRA_CONTENT } from "./staff/judgmentExtra.jsx";
 
 const ACCENT = "#d6a94c";
 
@@ -14,10 +19,14 @@ const TOPICS = [
   { id: "lru", label: "LRU Cache", group: "Design a DS" },
   { id: "rate-limiter", label: "Rate Limiter", group: "Design a DS" },
   { id: "trie", label: "Autocomplete / Trie", group: "Design a DS" },
+  ...EXTRA_DESIGN_TOPICS,
   { id: "concurrency", label: "Primitives & Pitfalls", group: "Concurrency" },
+  ...CONCURRENCY_EXTRA_TOPICS,
+  ...SYSTEM_TOPICS,
   { id: "tradeoffs", label: "Trade-offs", group: "Judgment" },
   { id: "estimation", label: "Back-of-Envelope", group: "Judgment" },
   { id: "communicating", label: "Communicating", group: "Judgment" },
+  ...JUDGMENT_EXTRA_TOPICS,
 ];
 
 const { Block, Try } = withAccent(ACCENT);
@@ -614,10 +623,14 @@ const CONTENT = {
   lru: <Lru />,
   "rate-limiter": <RateLimiter />,
   trie: <TrieTopic />,
+  ...EXTRA_DESIGN_CONTENT,
   concurrency: <Concurrency />,
+  ...CONCURRENCY_EXTRA_CONTENT,
+  ...SYSTEM_CONTENT,
   tradeoffs: <Tradeoffs />,
   estimation: <Estimation />,
   communicating: <Communicating />,
+  ...JUDGMENT_EXTRA_CONTENT,
 };
 
 export default function StaffBench() {
