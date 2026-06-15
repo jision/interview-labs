@@ -18,11 +18,17 @@
   --color-ink-dim: #a8b0bf;
   --color-ink-faint: #6b7480;
 
-  /* Per-tool accents (from the original site) */
+  /* Per-tool accents — DSA track */
   --color-lab: #38e0d6;
   --color-bench: #e8553b;
   --color-ident: #ffcf4a;
   --color-staff: #d6a94c;
+
+  /* Per-tool accents — AI Architect track */
+  --color-ailab: #7c5cff;
+  --color-modelbench: #00b4d8;
+  --color-selector: #ffb703;
+  --color-architect: #fb6f3c;
 
   /* Semantic accents for callouts */
   --color-tip: #4ade80;

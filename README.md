@@ -1,12 +1,15 @@
 # Interview Labs
 
-Interactive data-structures & algorithms revision site. Four tools, one landing hub,
-deployed as a single static site to GitHub Pages. Built with **Vite + React + Tailwind v4**.
+Interactive interview-prep site with **two tracks** — classic **DSA** and **AI architecture** —
+across eight tools on one landing hub, deployed as a single static site to GitHub Pages.
+Built with **Vite + React + Tailwind v4**.
 
-The goal is to *grasp* concepts, not memorize them: every structure gets a live
-visualization, its real Python internals, a complexity table, and tips/gotchas.
+The goal is to *grasp* concepts, not memorize them: every topic gets a live visualization or
+interactive widget, the real internals, a complexity/trade-off table, and tips/gotchas.
 
 ## Status
+
+### DSA track
 
 | Tool | What it covers | State |
 |------|----------------|-------|
@@ -14,6 +17,22 @@ visualization, its real Python internals, a complexity table, and tips/gotchas.
 | **Interview Bench** | The ~10 interview patterns + DP atlas | ✅ built |
 | **The Identifier** | Recognizing which approach a problem wants | ✅ built |
 | **The Staff Bench** | DS design, concurrency, trade-off judgment | ✅ built |
+
+### AI Architect track (GenAI/LLM systems)
+
+| Tool | What it covers | State |
+|------|----------------|-------|
+| **AI · LAB** | Attention, embeddings, tokenization, sampling, training internals | ✅ built |
+| **Model Bench** | RAG, agents, fine-tuning, evals, classic ML families | ✅ built |
+| **The Selector** | Prompt vs RAG vs fine-tune, build-vs-buy, cost/latency/quality | ✅ built |
+| **The Architect's Bench** | LLM system design + cost/serving estimators | ✅ built |
+
+The AI track ships **20 interactive widgets** (attention heatmap, embedding-space explorer,
+decoding playground, tokenizer, gradient descent, bias–variance, RAG pipeline, agentic-loop
+trace, eval-method comparison, quantization, LoRA diagram, prompt patterns, approach decision
+tree, budget decoder, build-vs-buy, metric selector, disambiguation flashcards, cost estimator,
+serving-capacity estimator, trade-off triangle). All use hand-authored fixtures — no model runs
+in the browser, no network calls. See `ai-architect-labs-plan.md` for the full content map.
 
 All four tools are built and interactive. Highlights:
 
