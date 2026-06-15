@@ -43,6 +43,12 @@ function buildTrace(ops, useLock) {
   let count = 0;
   let regA = null;
   let regB = null;
+  // Structural lost-update detection (valid for ANY interleaving, not just this one):
+  // `version` counts completed STOREs to count. A STORE is a lost update iff another
+  // STORE landed between this thread's LOAD and this STORE — i.e. the value it writes
+  // is based on a now-stale read, so it clobbers an increment it never saw.
+  let version = 0;
+  const loadedVer = [-1, -1];
   for (const op of ops) {
     const name = op.thread === 0 ? "A" : "B";
     let msg;
@@ -50,6 +56,7 @@ function buildTrace(ops, useLock) {
     if (op.step === "LOAD") {
       if (op.thread === 0) regA = count;
       else regB = count;
+      loadedVer[op.thread] = version; // remember which version of count it read
       msg = `Thread ${name}: LOAD — read shared count (${count}) into its register.`;
     } else if (op.step === "ADD") {
       if (op.thread === 0) regA = (regA ?? 0) + 1;
@@ -58,12 +65,15 @@ function buildTrace(ops, useLock) {
       msg = `Thread ${name}: ADD — register = ${r - 1} + 1 = ${r} (local only; count untouched).`;
     } else {
       const r = op.thread === 0 ? regA : regB;
-      const before = count;
+      const staleBy = version - loadedVer[op.thread]; // STOREs since this thread's LOAD
+      const lost = staleBy > 0; // its read is stale → this write clobbers an update
       count = r ?? 0;
-      const lost = before === count; // wrote a value already there → an update vanished
+      version += 1; // this STORE bumps the version
       msg =
         `Thread ${name}: STORE — write register (${r}) back → count = ${count}.` +
-        (lost ? " ⚠ This re-wrote a value already present — an increment was LOST." : "");
+        (lost
+          ? ` ⚠ Stale write: count changed ${staleBy}× since this thread's LOAD, so this STORE clobbers an increment — it's LOST.`
+          : "");
     }
     trace.push({ count, regA, regB, held, msg });
   }
