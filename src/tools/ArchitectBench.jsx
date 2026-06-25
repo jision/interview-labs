@@ -16,10 +16,17 @@ const TOPICS = [
   { id: "scaling", label: "Design: scaling & reliability", group: "System design" },
   { id: "recommendation", label: "Design: recommendation system", group: "System design" },
   { id: "multiagent", label: "Design: multi-agent", group: "System design" },
+  { id: "training-infra", label: "Distributed training & infra", group: "System design" },
+  { id: "inframeworks", label: "Inference frameworks & infra", group: "System design" },
   { id: "mlops", label: "The MLOps lifecycle", group: "MLOps & lifecycle" },
   { id: "data", label: "Data & feature pipelines", group: "MLOps & lifecycle" },
   { id: "deployment", label: "Deployment & rollout", group: "MLOps & lifecycle" },
   { id: "eval-system", label: "Eval & monitoring", group: "MLOps & lifecycle" },
+  { id: "interpretability", label: "Interpretability & explainability", group: "Responsible AI" },
+  { id: "fairness", label: "Fairness & bias", group: "Responsible AI" },
+  { id: "privacy", label: "Privacy & data protection", group: "Responsible AI" },
+  { id: "governance", label: "Governance & regulation", group: "Responsible AI" },
+  { id: "adversarial", label: "Adversarial ML & security", group: "Responsible AI" },
   { id: "cost", label: "Cost & capacity", group: "Judgment" },
   { id: "numbers", label: "Numbers to know", group: "Judgment" },
   { id: "safety", label: "Guardrails & safety", group: "Judgment" },
@@ -1041,16 +1048,582 @@ function RecSystem() {
   );
 }
 
+/* ── Distributed training & infra ─────────────────────────────── */
+function TrainingInfra() {
+  return (
+    <>
+      <Lede>
+        Frontier models don't fit on one GPU — the weights alone, plus gradients and optimizer state,
+        blow past any single card's memory. So training a large model is a <strong>distributed-systems
+        problem</strong> first and a machine-learning problem second. The architect's job: pick a
+        parallelism strategy by figuring out <em>what, exactly, doesn't fit</em>.
+      </Lede>
+
+      <Block eyebrow="the four ways to split" title="Parallelism is about what overflows">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          There isn't one "distributed training" — there are distinct strategies, each solving a different
+          overflow. You diagnose the bottleneck (throughput? a single huge layer? model depth? optimizer
+          state?) and reach for the matching split. At frontier scale you combine them.
+        </p>
+        <OpTable
+          cols={["Strategy", "What it splits", "", "Reach for it when"]}
+          rows={[
+            { op: "Data parallel", avg: "the batch", avgTone: "good", why: "Replicate the whole model on every GPU, split the batch across them, all-reduce gradients each step. Simplest and most common — but it needs the model to fit on one GPU. Scales throughput." },
+            { op: "Tensor / model parallel", avg: "one layer's matrices", avgTone: "ok", why: "Shard a single layer's weight matrices across GPUs so a layer too big for one card still runs. Very chatty — heavy inter-GPU communication, so keep it within one node over NVLink." },
+            { op: "Pipeline parallel", avg: "the layers (depth)", avgTone: "ok", why: "Put different layers on different GPUs/nodes; feed micro-batches to keep every stage busy. Scales across machines, but leaves a startup/drain 'bubble' of idle time you minimize with more micro-batches." },
+            { op: "FSDP / ZeRO", avg: "params + grads + optimizer", avgTone: "good", why: "Shard state across GPUs, gather just-in-time. ZeRO stage 1 shards optimizer states, stage 2 adds gradients, stage 3 adds the parameters (≈ FSDP) — trains a model far bigger than one GPU without full tensor-parallel complexity." },
+          ]}
+        />
+        <Callout kind="tip" title="Match the split to the overflow">
+          Need more <strong>throughput</strong> and the model fits → data parallel. A single <strong>layer</strong>{" "}
+          is too big → tensor parallel, kept inside a node. The model is too <strong>deep</strong> to fit →
+          pipeline parallel across nodes. The <strong>optimizer state</strong> is the thing blowing memory →
+          ZeRO/FSDP. At true frontier scale you stack all three (data × tensor × pipeline) — that's
+          <strong> 3D parallelism</strong>.
+        </Callout>
+        <Callout kind="trap" title="Tensor parallel is a bandwidth hog">
+          Tensor parallelism communicates inside every layer's forward and backward pass, so it's only viable
+          over a fast interconnect (NVLink within a node). Stretch it across nodes on slower links and
+          communication, not compute, becomes your bottleneck. Pipeline parallel is the one designed to cross
+          node boundaries.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="how 3D parallelism stacks" title="Combining the splits at frontier scale">
+        <CodeBlock
+          title="text"
+          lang="text"
+          code={`one cluster, sliced three ways at once:
+
+  PIPELINE  ─ layers 0–15 on node A, 16–31 on node B, ...   (split by depth, across nodes)
+     │
+     ├─ TENSOR  ─ within a node, each layer's matrices shard across its GPUs (NVLink)
+     │
+     └─ DATA    ─ the whole pipeline is replicated; each replica eats a slice of the batch,
+                  gradients all-reduced across replicas every step
+
+rule of thumb:  tensor = intra-node (fast link)   pipeline = inter-node   data = outermost replica`}
+        />
+        <p className="text-ink-dim leading-relaxed mt-2">
+          The ordering isn't arbitrary: you put the chattiest split (tensor) on the fastest link, the
+          depth-wise split (pipeline) across nodes where the per-stage traffic is smaller, and wrap the whole
+          thing in data-parallel replicas. ZeRO/FSDP is layered in to shard the optimizer state that data
+          parallelism would otherwise replicate on every GPU.
+        </p>
+      </Block>
+
+      <Block eyebrow="the memory-saving tricks" title="Fitting more on each GPU">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Independent of how you split the model, a handful of techniques cut per-GPU memory so a given
+          configuration fits at all — or fits a bigger batch. An interviewer expects you to name them.
+        </p>
+        <OpTable
+          cols={["Technique", "Buys you", "", "The cost"]}
+          rows={[
+            { op: "Gradient checkpointing", avg: "↓ activation memory", avgTone: "good", why: "Don't store every layer's activations for the backward pass — recompute them on the fly. Trades extra compute for a large memory saving (activation recomputation)." },
+            { op: "Mixed precision (BF16)", avg: "↓ memory + faster", avgTone: "good", why: "Train in BF16 instead of FP32 for ~half the memory and faster matmuls; BF16's wide exponent avoids the overflow issues plain FP16 had." },
+            { op: "Gradient accumulation", avg: "big effective batch", avgTone: "ok", why: "Run several micro-batches and sum their gradients before stepping — simulate a large batch you couldn't hold in memory at once." },
+            { op: "Fault-tolerant checkpointing", avg: "survive failures", avgTone: "good", why: "A run lasts days or weeks across thousands of GPUs; a node will die. Checkpoint periodically so you resume from the last save instead of restarting — non-negotiable at scale." },
+          ]}
+        />
+        <Callout kind="note" title="Interconnect and data prep are part of the system">
+          The network is a first-class design constraint: <strong>NVLink</strong> binds GPUs within a node,{" "}
+          <strong>InfiniBand</strong> binds nodes — and all-reduce/all-gather traffic rides on it, so a slow
+          link starves the compute. Upstream, preparing the training corpus (dedup, filter, tokenize at
+          petabyte scale) is its own distributed job, typically on <strong>Spark or Ray</strong>.
+        </Callout>
+        <Callout kind="tip" title="The interview answer">
+          "Frontier models don't fit on one GPU, so training is a distributed-systems problem. I pick the
+          parallelism by what overflows: data parallel for throughput when the model fits, tensor parallel
+          to split a layer too big for one card — kept within a node over NVLink — pipeline parallel to split
+          a model too deep across nodes, and ZeRO/FSDP to shard optimizer state. At frontier scale that's 3D
+          parallelism. On top I run gradient checkpointing, BF16 mixed precision, and gradient accumulation
+          to fit memory, and fault-tolerant checkpointing because a week-long run on thousands of GPUs will
+          lose nodes."
+        </Callout>
+      </Block>
+    </>
+  );
+}
+
+/* ── Interpretability & explainability ────────────────────────── */
+function Interpretability() {
+  return (
+    <>
+      <Lede>
+        A model that's accurate but unexplainable is a liability — you can't debug it, you can't earn a
+        user's trust in its decision, and increasingly you can't satisfy a regulator. Most executives now
+        rate explainability as essential to deploying AI. The architect's job is to know which method
+        answers which question.
+      </Lede>
+
+      <Block eyebrow="two axes" title="Intrinsic vs post-hoc, global vs local">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Interpretability splits along two axes. First, <strong>intrinsic vs post-hoc</strong>: some models
+          are readable by construction (a linear model's coefficients, a shallow decision tree's splits),
+          while complex models need a separate method applied <em>after</em> training to explain them.
+          Second, <strong>global vs local</strong>: are you explaining the model's behavior overall, or one
+          specific prediction?
+        </p>
+        <CodeBlock
+          title="text"
+          lang="text"
+          code={`                 GLOBAL (whole model)            LOCAL (one prediction)
+  INTRINSIC      linear coefficients,             read the path a tree
+                 tree feature splits              took for this row
+  POST-HOC       permutation importance,          SHAP / LIME on this
+                 partial dependence               single instance`}
+        />
+        <Callout kind="note" title="The accuracy ↔ interpretability trade-off">
+          As a rule, the more expressive the model, the harder it is to read. A linear model explains itself
+          but may underfit; a deep net or gradient-boosted ensemble wins on accuracy but needs post-hoc tools
+          to interrogate. Pick the simplest model that meets the accuracy bar — sometimes a readable model is
+          the right call precisely <em>because</em> it's readable.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="the toolkit" title="Post-hoc methods for any model">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          When the model isn't intrinsically readable, these are the standard explainers. The first two are
+          the ones to name in an interview — know what each one actually computes.
+        </p>
+        <OpTable
+          cols={["Method", "What it does", "", "When / caveat"]}
+          rows={[
+            { op: "SHAP", avg: "Shapley attribution", avgTone: "good", why: "Game-theoretic: fairly distributes a prediction across its features by averaging each feature's marginal contribution over all orderings. Consistent, and works both local (one row) and global (aggregate). Can be slow to compute." },
+            { op: "LIME", avg: "local linear surrogate", avgTone: "ok", why: "Perturb the inputs around one prediction and fit a simple linear model to that neighborhood — explains a single decision. Fast and model-agnostic, but only locally faithful and can be unstable." },
+            { op: "Permutation importance", avg: "global feature ranking", avgTone: "ok", why: "Shuffle one feature's values and measure how much accuracy drops — bigger drop, more important. Simple and global, but misleads when features are correlated." },
+            { op: "Partial dependence", avg: "feature → output curve", avgTone: "ok", why: "Sweep one feature across its range and plot the average predicted effect — shows the shape of a relationship, globally. Assumes feature independence." },
+          ]}
+        />
+        <Callout kind="note" title="For deep nets and LLMs specifically">
+          On images and deep nets you reach for <strong>saliency maps</strong>, <strong>integrated
+          gradients</strong>, and <strong>attention maps</strong> to see what the network looked at. For
+          LLMs there's attention attribution, and a research frontier called <strong>mechanistic
+          interpretability</strong> — reverse-engineering the circuits and features inside a model, often by
+          using sparse autoencoders to pull out human-interpretable concepts from the activations.
+        </Callout>
+        <Callout kind="tip" title="The interview answer">
+          "Explainability earns trust, enables debugging, and is increasingly required for compliance. I
+          think in two axes — intrinsic (linear/trees read themselves) vs post-hoc, and global vs local. For
+          post-hoc I default to SHAP for consistent Shapley-based attributions that work locally and
+          globally, LIME for a quick single-prediction explanation, and permutation importance or partial
+          dependence for global views. For deep nets it's integrated gradients and attention; for LLMs,
+          attention attribution and mechanistic interpretability. And I weigh the accuracy-vs-interpretability
+          trade-off rather than assuming the most accurate model is the right one to ship."
+        </Callout>
+      </Block>
+    </>
+  );
+}
+
+/* ── Fairness & bias ──────────────────────────────────────────── */
+function Fairness() {
+  return (
+    <>
+      <Lede>
+        Bias in an AI system isn't a moral footnote — it's a measurable property with legal consequences,
+        especially where a model affects someone's access to opportunity (hiring, lending, housing). The
+        senior insight an interviewer is listening for: the fairness metrics <strong>mathematically
+        conflict</strong>, so "make it fair" is incomplete until you say <em>fair how</em>.
+      </Lede>
+
+      <Block eyebrow="where bias enters" title="Data, model, and the deployed feedback loop">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Bias has three entry points, and naming them is the first move. <strong>Data</strong>: historical
+          bias (the world the data records was already unequal), sampling bias (some groups under-represented),
+          and labeling bias (annotators carry their own slant). <strong>Modeling</strong>: the training
+          objective can amplify a small skew into a large disparity. <strong>Deployment</strong>: a biased
+          model shapes the very data it later learns from — a feedback loop that entrenches the bias over
+          time.
+        </p>
+        <Callout kind="trap" title="'The data is just reflecting reality' is the trap">
+          Historical data encodes historical inequity; a model trained to predict it faithfully will
+          reproduce that inequity and call it accuracy. Faithfully learning a biased world is exactly the
+          failure mode — not a defense of it.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="pick your definition" title="The fairness metrics — and why they conflict">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          "Fair" isn't one thing; it's a family of formal definitions, and they make different demands. You
+          generally <strong>cannot satisfy all of them at once</strong> — it's a proven impossibility, not an
+          engineering gap. So you choose the one tied to the actual harm you're guarding against.
+        </p>
+        <OpTable
+          cols={["Metric", "Requires", "", "Use when"]}
+          rows={[
+            { op: "Demographic parity", avg: "equal positive rate", avgTone: "ok", why: "The model selects each group at the same rate. Good when the base rates should be equal; can force unqualified selections when they genuinely aren't." },
+            { op: "Equal opportunity", avg: "equal true-positive rate", avgTone: "ok", why: "Among those who truly qualify, each group is selected at the same rate. The usual choice when missing a qualified person is the harm (a qualified applicant rejected)." },
+            { op: "Equalized odds", avg: "equal TPR and FPR", avgTone: "ok", why: "Stricter: equalize both true-positive and false-positive rates across groups. Hard to satisfy alongside calibration." },
+            { op: "Disparate impact", avg: "the 80% rule", avgTone: "bad", why: "A legal screen: a group's selection rate below 80% of the top group's flags adverse impact. Common in hiring/lending compliance." },
+          ]}
+        />
+        <Callout kind="trap" title="The metrics provably conflict">
+          Except in trivial cases you can't have demographic parity, equalized odds, <em>and</em> calibration
+          simultaneously — improving one degrades another. This is why "is it fair?" has no answer until you
+          pick the definition. Tie the choice to the harm: rejecting a qualified person → equal opportunity;
+          regulated selection rates → disparate impact.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="where to intervene" title="Mitigate at three stages, audit across the lifecycle">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Once you've chosen the metric, you can correct bias at three points in the pipeline — and the
+          choice of stage matters as much as the choice of metric.
+        </p>
+        <OpTable
+          cols={["Stage", "How", "", "Trade-off"]}
+          rows={[
+            { op: "Pre-processing", avg: "fix the data", avgTone: "good", why: "Reweight or resample so under-represented groups carry fair weight before training. Addresses the root cause; needs the protected attribute at training time." },
+            { op: "In-processing", avg: "constrain training", avgTone: "ok", why: "Add a fairness constraint or penalty to the training objective so the model optimizes accuracy and fairness jointly. Powerful but more complex to tune." },
+            { op: "Post-processing", avg: "adjust thresholds", avgTone: "ok", why: "Set per-group decision thresholds after the model is trained to equalize the chosen metric. Simple and model-agnostic, but requires the protected attribute at inference and can feel like overt different treatment." },
+          ]}
+        />
+        <Callout kind="tip" title="The interview answer">
+          "Bias enters through data, modeling, and deployment feedback loops — so I audit across the whole
+          lifecycle, especially where the model gates access to opportunity. The key point is that fairness
+          metrics mathematically conflict: I can't satisfy demographic parity, equalized odds, and
+          calibration at once, so I pick the definition tied to the harm — usually equal opportunity when
+          rejecting a qualified person is the cost, or disparate impact's 80% rule when there's a legal
+          screen. Then I mitigate at the right stage: reweight the data (pre), constrain training (in), or
+          set per-group thresholds (post)."
+        </Callout>
+      </Block>
+    </>
+  );
+}
+
+/* ── Privacy & data protection ────────────────────────────────── */
+function Privacy() {
+  return (
+    <>
+      <Lede>
+        Models memorize their training data — which means a system trained on sensitive data can be coaxed
+        into leaking it. Privacy isn't a checkbox at the end; it's an architectural property you design in,
+        balancing the model's appetite for data against a duty to protect the people in it.
+      </Lede>
+
+      <Block eyebrow="the attack surface" title="How private data leaks out of a model">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Name the risks before the defenses. A trained model is itself an artifact that can leak its inputs:
+        </p>
+        <OpTable
+          cols={["Risk", "What happens", "", "Why it bites"]}
+          rows={[
+            { op: "Memorization & extraction", avg: "model regurgitates training data", avgTone: "bad", why: "Large models memorize rare sequences verbatim; a crafted prompt can pull a secret, a key, or a person's record back out." },
+            { op: "Membership inference", avg: "'was this person in the data?'", avgTone: "bad", why: "An attacker can often tell whether a specific record was in the training set from the model's confidence — itself a privacy breach for sensitive datasets." },
+            { op: "PII leakage", avg: "names, emails, SSNs surface", avgTone: "bad", why: "Personal identifiers in training data or context can appear in outputs or logs if not scrubbed." },
+            { op: "Re-identification", avg: "'anonymous' data de-anonymized", avgTone: "bad", why: "Stripping names isn't enough — quasi-identifiers (zip + birthdate + sex) re-link records to real people when joined with other datasets." },
+          ]}
+        />
+      </Block>
+
+      <Block eyebrow="the toolkit" title="Techniques, from cheap to formal">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          The defenses range from simple hygiene to mathematical guarantees, each with a real cost. The two
+          to understand deeply are differential privacy and federated learning.
+        </p>
+        <OpTable
+          cols={["Technique", "What it gives you", "", "The cost / limit"]}
+          rows={[
+            { op: "Data minimization", avg: "collect less", avgTone: "good", why: "You can't leak what you never stored. The cheapest and most underrated control — only retain what the task genuinely needs." },
+            { op: "Anonymization / pseudonymization", avg: "strip or mask identifiers", avgTone: "ok", why: "Remove or replace direct identifiers. Limited: quasi-identifiers still enable re-identification, so it's a layer, not a guarantee." },
+            { op: "Differential privacy", avg: "a formal guarantee", avgTone: "good", why: "Add calibrated noise so any single individual's presence barely changes the output — provably bounding what can be learned about them. The privacy budget ε tunes it: smaller ε = more privacy, less accuracy." },
+            { op: "Federated learning", avg: "train without centralizing data", avgTone: "ok", why: "Train on-device and send model updates, not raw data, to a server that aggregates them. Pair with secure aggregation so the server sees only the combined update, never an individual's." },
+            { op: "Encryption / access control", avg: "limit who sees what", avgTone: "good", why: "Encrypt at rest and in transit; gate access by role. Table stakes — the foundation the rest sits on." },
+          ]}
+        />
+        <Callout kind="note" title="The ε budget is a real dial">
+          Differential privacy isn't free: the noise that protects individuals also blurs the signal the
+          model learns. The privacy budget <strong>ε (epsilon)</strong> is the knob — a small ε gives a
+          strong guarantee but costs accuracy, a large ε preserves accuracy but weakens the protection.
+          Naming ε as a tunable trade-off is the senior signal here.
+        </Callout>
+        <Callout kind="tip" title="For LLMs specifically">
+          Three concrete controls: <strong>scrub PII on input</strong> before it reaches the model or your
+          logs, <strong>filter outputs</strong> to catch leaked identifiers, and <strong>govern what you
+          train on</strong> — a "don't train on customer data" policy, enforced in the pipeline, is the
+          difference between a contained system and a class-action.
+        </Callout>
+        <Callout kind="tip" title="The interview answer">
+          "The risks are memorization and extraction, membership inference, PII leakage, and
+          re-identification — a trained model can leak its inputs. I layer defenses: minimize what I collect,
+          anonymize knowing its limits, and for a formal guarantee use differential privacy, tuning the ε
+          budget to trade privacy against accuracy. When data can't be centralized I use federated learning
+          with secure aggregation. For LLMs specifically: PII scrubbing on input, output filtering, and a
+          governed no-train-on-customer-data policy enforced in the pipeline."
+        </Callout>
+      </Block>
+    </>
+  );
+}
+
+/* ── Governance & regulation ──────────────────────────────────── */
+function Governance() {
+  return (
+    <>
+      <Lede>
+        AI regulation has stopped being hypothetical — the EU AI Act's high-risk obligations are phasing
+        in through 2026–27, and US state laws are following. The architect's contribution isn't legal expertise; it's
+        wiring compliance into the system as a <strong>pipeline stage</strong>, so trust is enforced
+        automatically rather than assembled as paperwork after the fact.
+      </Lede>
+
+      <Block eyebrow="the regulatory shape" title="Risk-based tiers are the model to know">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          The dominant regulatory pattern is <strong>risk-based</strong>: obligations scale with how much
+          harm a system can do. The EU AI Act is the reference, sorting systems into tiers — and the heavy
+          obligations attach to the high-risk tier.
+        </p>
+        <CodeBlock
+          title="text"
+          lang="text"
+          code={`EU AI Act — risk tiers (obligations scale with harm)
+
+  UNACCEPTABLE   banned outright (e.g. social scoring)
+  HIGH RISK      hiring, lending, medical, critical infra
+                 → conformity assessment, documentation, human oversight,
+                   logging — phasing in through 2026–27
+  LIMITED RISK   transparency duties (tell users it's AI / it's synthetic)
+  MINIMAL RISK   most apps — largely unregulated`}
+        />
+        <p className="text-ink-dim leading-relaxed mt-2">
+          It isn't only the EU: US state laws like the <strong>Colorado AI Act</strong> impose their own
+          obligations on high-risk, consequential decisions. The throughline across all of them is the same —
+          if your system affects someone's access to a job, credit, or care, expect documentation, oversight,
+          and audit requirements.
+        </p>
+      </Block>
+
+      <Block eyebrow="governance as architecture" title="Wiring trust into the lifecycle">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Governance is the set of mechanisms that make trust verifiable across the model's life. The
+          architect's move is to turn each of these from a document someone <em>should</em> produce into a
+          gate the pipeline <em>enforces</em>.
+        </p>
+        <OpTable
+          cols={["Mechanism", "What it does", "", "Where it lives"]}
+          rows={[
+            { op: "Model cards / datasheets", avg: "document model & data", avgTone: "good", why: "Standardized record of a model's intended use, training data, limitations, and eval results — the audit's starting point. Generate it as a build artifact, not a one-off doc." },
+            { op: "Risk classification", avg: "tier the system", avgTone: "ok", why: "Decide up front which regulatory tier a use case falls in; that sets which obligations and gates apply." },
+            { op: "Pre-deployment gates", avg: "block unsafe releases", avgTone: "good", why: "Automated checks for validity, safety, security, privacy, fairness, and explainability that must pass before a model ships — the compliance equivalent of a CI gate." },
+            { op: "Audit trails", avg: "logged lineage & decisions", avgTone: "good", why: "Versioned record of what model, data, and config served each decision — so you can reconstruct and defend any output later." },
+            { op: "Review board + incident response", avg: "human oversight & recovery", avgTone: "ok", why: "An ethics/review board signs off on high-risk launches; an incident-response plan handles harms when they occur. Pairs with continuous monitoring for drift and bias." },
+          ]}
+        />
+        <Callout kind="note" title="Continuous monitoring closes the loop">
+          Compliance isn't a launch-day stamp — a model can drift into unfairness or degrade in production
+          long after it passed its pre-deployment gate. The same monitoring that watches quality and drift
+          (see the MLOps lifecycle topic) watches the fairness and safety signals that keep the system
+          compliant over time.
+        </Callout>
+        <Callout kind="tip" title="The interview answer">
+          "Regulation is arriving — the EU AI Act's risk-based tiers, with high-risk obligations phasing in
+          through 2026–27, plus state laws like the Colorado AI Act. My job as architect is to make compliance a
+          pipeline stage, not paperwork: risk-classify the use case, generate model cards as build artifacts,
+          and wire pre-deployment gates for validity, safety, security, privacy, fairness, and explainability
+          — the same shape as a CI gate. Then audit trails, a review board, incident response, and continuous
+          monitoring for drift and bias keep it compliant after launch. It ties straight into the MLOps
+          lifecycle — governance is just another thing the pipeline enforces automatically."
+        </Callout>
+      </Block>
+    </>
+  );
+}
+
+/* ── Inference frameworks & infra ─────────────────────────────── */
+function InfraFrameworks() {
+  return (
+    <>
+      <Lede>
+        The <em>Serving</em> topic covers the tricks — continuous batching, the KV cache, paged
+        attention. This is the layer underneath: you almost never hand-build those. A mature open-source
+        stack already implements them, and the senior move is to <strong>adopt a serving framework and
+        package it for a GPU fleet</strong>, not to write an inference server from scratch.
+      </Lede>
+
+      <Block eyebrow="don't roll your own" title="The LLM serving frameworks to name">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          These projects implement the batching, KV-cache, and paged-attention mechanics from the serving
+          topic for you. Knowing the landscape — and why you'd pick one — is the signal here; reimplementing
+          paged attention by hand is not.
+        </p>
+        <OpTable
+          cols={["Framework", "What it is", "", "Reach for it when"]}
+          rows={[
+            { op: "vLLM", avg: "the open-source default", avgTone: "good", why: "Paged attention + continuous batching out of the box; high throughput and a wide model catalog. The default starting point for self-hosted LLM serving." },
+            { op: "TensorRT-LLM", avg: "fastest on NVIDIA", avgTone: "ok", why: "NVIDIA's compiled engine — the fastest option on NVIDIA GPUs, at the cost of more build/setup work and tighter hardware coupling." },
+            { op: "TGI", avg: "Hugging Face server", avgTone: "ok", why: "Text Generation Inference — a production server that integrates cleanly with the Hugging Face ecosystem." },
+            { op: "Triton Inference Server", avg: "multi-model serving", avgTone: "ok", why: "NVIDIA's general server for multi-model / multi-framework deployments — hosts many models (and backends like TensorRT or PyTorch) behind one endpoint." },
+            { op: "ONNX Runtime", avg: "cross-platform runtime", avgTone: "ok", why: "Runs models exported to the ONNX format across CPU/GPU and hardware vendors — also the workhorse for classic (non-LLM) models." },
+          ]}
+        />
+        <Callout kind="note" title="These ARE the serving tricks, packaged">
+          Continuous batching, KV-cache management, and paged attention aren't things you implement — they're
+          features of the framework you choose. Picking vLLM <em>is</em> picking paged attention. The
+          architecture decision is which framework, not how to build one.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="shipping the server" title="Packaging & orchestration">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          A serving framework is a process; a production system is a fleet. You{" "}
+          <strong>containerize</strong> the server with Docker (model weights, CUDA, and the framework
+          pinned together), then <strong>orchestrate</strong> the containers with Kubernetes and{" "}
+          <strong>autoscale</strong> a pool of GPU replicas — which lands you straight in the{" "}
+          <em>Scaling &amp; reliability</em> topic: a queue and load balancer in front of an autoscaled GPU
+          pool, scaling on queue depth or GPU utilization rather than CPU.
+        </p>
+        <Callout kind="trap" title="GPU cold-starts break naive autoscaling">
+          A new GPU replica must pull a multi-GB image and model, then warm the CUDA context and the
+          framework — <strong>minutes</strong>, not seconds. So you can't scale-to-zero and back reactively
+          on a spike. Keep a <strong>warm buffer</strong> of capacity plus a queue to ride out bursts while
+          replicas spin up (same pattern as the Scaling topic).
+        </Callout>
+      </Block>
+
+      <Block eyebrow="what it runs on" title="Hardware — GPU, TPU, and accelerators">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          The framework runs on silicon, and the silicon has trade-offs an architect should be able to name.
+          The two that matter most in practice are <strong>memory</strong> (does the model + KV cache fit?)
+          and <strong>interconnect</strong> (how fast can chips talk when a model is split across them).
+        </p>
+        <OpTable
+          cols={["Hardware", "Good for", "", "The detail"]}
+          rows={[
+            { op: "GPU", avg: "the workhorse", avgTone: "good", why: "The default for both training and inference — broad framework support and the most mature tooling. Memory capacity is usually the binding constraint." },
+            { op: "TPU", avg: "Google's accelerator", avgTone: "ok", why: "Custom matrix-multiply silicon, strong for large-scale training and serving on Google Cloud; less portable than GPUs." },
+            { op: "Inference accelerators", avg: "dedicated chips", avgTone: "ok", why: "Purpose-built inference parts (e.g. cloud inference chips) can cut cost-per-token, but with a narrower software ecosystem to validate against." },
+            { op: "CPU", avg: "classic & light inference", avgTone: "ok", why: "Perfectly fine for tabular/classic ML and small or low-traffic models — no GPU needed. Too slow for large-LLM serving at volume." },
+          ]}
+        />
+        <Callout kind="note" title="Memory and interconnect are the real constraints">
+          Two networks matter once a model spans chips: <strong>NVLink</strong> binds GPUs <em>within</em> a
+          node (fast — where you keep chatty tensor-parallel splits), and <strong>InfiniBand</strong> binds
+          nodes <em>across</em> the cluster. A slow link starves the compute, which is exactly why tensor
+          parallelism stays intra-node (see <em>Distributed training &amp; infra</em>).
+        </Callout>
+        <Callout kind="tip" title="The interview answer">
+          "I don't hand-build an inference server — I adopt a serving framework that already implements
+          continuous batching and paged attention: vLLM as the open-source default, TensorRT-LLM when I need
+          the fastest path on NVIDIA, TGI or Triton for HF integration and multi-model serving. I
+          containerize it with Docker and run an autoscaled GPU pool on Kubernetes, scaling on queue depth
+          with a warm buffer because GPU cold-starts take minutes. On hardware, GPUs are the default, TPUs
+          and dedicated inference chips are options, CPUs are fine for classic/light models — and memory plus
+          interconnect (NVLink intra-node, InfiniBand across nodes) are the constraints that actually bind."
+        </Callout>
+      </Block>
+    </>
+  );
+}
+
+/* ── Adversarial ML & security ────────────────────────────────── */
+function Adversarial() {
+  return (
+    <>
+      <Lede>
+        <em>Guardrails &amp; safety</em> covers prompt injection and the request-time threat model. This is
+        the wider one: <strong>the model itself is an attack surface.</strong> Its predictions can be fooled,
+        its training data poisoned, and the model — or the data inside it — stolen through the API. Security
+        is defense-in-depth across data, model, and serving, and you assume an adversary is probing the API.
+      </Lede>
+
+      <Block eyebrow="the attacks" title="How an adversary goes after a model">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Name the attack classes before the defenses — they target different stages of the lifecycle (the
+          training data, the model artifact, and the live inference API), and each maps to a different
+          control.
+        </p>
+        <OpTable
+          cols={["Attack", "What it does", "", "Where it hits"]}
+          rows={[
+            { op: "Adversarial examples / evasion", avg: "fool a live prediction", avgTone: "bad", why: "A tiny, often imperceptible crafted perturbation flips the model's output — a stop sign read as a speed limit, spam scored as benign. Targets the model at inference time." },
+            { op: "Data poisoning & backdoors", avg: "corrupt the training set", avgTone: "bad", why: "Inject malicious examples so the model learns a hidden trigger — behaving normally until a specific input pattern appears, then misbehaving on command." },
+            { op: "Model extraction / stealing", avg: "clone via the API", avgTone: "bad", why: "Query the endpoint enough and train a surrogate that replicates it — stealing the IP without ever touching the weights." },
+            { op: "Membership inference", avg: "'was this record in training?'", avgTone: "bad", why: "Infer from the model's confidence whether a specific record was in the training set — a direct privacy leak (also in the Privacy topic)." },
+            { op: "Model inversion", avg: "reconstruct training data", avgTone: "bad", why: "Use the model's outputs to reconstruct representative training inputs — e.g. recover a recognizable face from a face-recognition model." },
+          ]}
+        />
+        <Callout kind="note" title="Three lifecycle stages, three surfaces">
+          Evasion and inversion attack the <strong>deployed model</strong>; poisoning attacks the{" "}
+          <strong>training data</strong>; extraction and membership inference attack through the{" "}
+          <strong>serving API</strong>. A real threat model covers all three — securing only the endpoint
+          leaves the data pipeline exposed.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="LLM-specific" title="The attacks unique to language models">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Generative models inherit all of the above and add a few of their own. The big two —{" "}
+          <strong>jailbreaks</strong> and <strong>prompt injection</strong> — are the request-time threat
+          covered in depth under <em>Guardrails &amp; safety</em> (recall the key insight there: retrieved
+          docs and tool outputs are untrusted input too, so injection can arrive <em>indirectly</em>). The
+          new one to name here is <strong>training-data extraction</strong>: a crafted prompt that coaxes a
+          model into regurgitating sequences it memorized verbatim — a secret, a key, someone's record
+          (ties to memorization in the Privacy topic).
+        </p>
+        <Callout kind="trap" title="Memorization is a security problem, not just a quirk">
+          Large models memorize rare training sequences word-for-word, and an attacker who knows that will
+          probe for them directly. So "what the model was trained on" is part of your attack surface — a
+          governed, scrubbed training corpus isn't only a privacy nicety, it shrinks what extraction can
+          ever pull out.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="the defenses" title="Defense-in-depth across data, model, and serving">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          No single control stops every attack — you layer them across the same three surfaces, assuming any
+          one can be bypassed (the same defense-in-depth posture as the Guardrails topic).
+        </p>
+        <OpTable
+          cols={["Defense", "What it does", "", "Stops"]}
+          rows={[
+            { op: "Adversarial training / robustness testing", avg: "harden the model", avgTone: "good", why: "Train on adversarial examples and red-team the model so crafted perturbations are less likely to flip it. Raises the cost of evasion." },
+            { op: "Input validation + rate limiting", avg: "throttle the API", avgTone: "good", why: "Bound how fast and how much an attacker can query — directly slows model extraction and membership inference, which need many probing queries to work." },
+            { op: "Output filtering", avg: "catch leaks on the way out", avgTone: "ok", why: "Scan responses for regurgitated secrets, PII, or training data before they reach the caller — the last line against extraction and inversion." },
+            { op: "Provenance / supply-chain security", avg: "trust what you load", avgTone: "good", why: "Verify the source and integrity of model weights and datasets; never load untrusted weights (they can carry backdoors) — and track data lineage to defend against poisoning." },
+            { op: "Red-teaming", avg: "attack yourself first", avgTone: "good", why: "Actively probe your own system for jailbreaks, evasion, and leakage before an adversary does — and feed the findings back into the defenses." },
+          ]}
+        />
+        <Callout kind="note" title="Untrusted weights are the supply-chain blind spot">
+          Downloading a model checkpoint is running someone else's artifact. A poisoned or backdoored set of
+          weights behaves perfectly until a trigger fires — so model and data <strong>provenance</strong>
+          (verified source, integrity checks, pinned lineage) is as much a security control as anything at
+          the API edge.
+        </Callout>
+        <Callout kind="tip" title="The interview answer">
+          "The model itself is an attack surface, so I think in three surfaces: the training data (poisoning
+          and backdoors), the deployed model (adversarial-example evasion, model inversion), and the serving
+          API (model extraction, membership inference). LLMs add training-data extraction on top of the
+          jailbreaks and prompt injection from the Guardrails topic. Defense is in depth: adversarial
+          training and robustness testing to harden the model, input validation and rate limiting to slow
+          extraction and inference attacks, output filtering to catch leaks, model and data provenance so I
+          never load untrusted weights, and red-teaming to find it all first. I assume an adversary is
+          actively probing the API."
+        </Callout>
+      </Block>
+    </>
+  );
+}
+
 const CONTENT = {
   "rag-system": <RagSystem />,
   serving: <Serving />,
   scaling: <Scaling />,
   recommendation: <RecSystem />,
   multiagent: <MultiAgent />,
+  "training-infra": <TrainingInfra />,
+  inframeworks: <InfraFrameworks />,
   mlops: <Ops />,
   data: <DataPipelines />,
   deployment: <Deployment />,
   "eval-system": <EvalSystem />,
+  interpretability: <Interpretability />,
+  fairness: <Fairness />,
+  privacy: <Privacy />,
+  governance: <Governance />,
+  adversarial: <Adversarial />,
   cost: <Cost />,
   numbers: <Numbers />,
   safety: <Safety />,

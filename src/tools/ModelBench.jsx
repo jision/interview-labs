@@ -18,6 +18,8 @@ const TOPICS = [
   { id: "finetune", label: "Fine-tuning & LoRA", group: "LLM patterns" },
   { id: "prompt", label: "Prompt patterns", group: "LLM patterns" },
   { id: "evals", label: "Evaluation", group: "LLM patterns" },
+  { id: "advrag", label: "Advanced RAG", group: "LLM patterns" },
+  { id: "toolmcp", label: "Tool use & MCP", group: "LLM patterns" },
   { id: "compress", label: "Quantization & distillation", group: "Efficiency" },
   { id: "classic", label: "Classic ML families", group: "Foundations" },
   { id: "recsys", label: "Recommendation", group: "Foundations" },
@@ -566,6 +568,215 @@ function Evals() {
   );
 }
 
+/* ── Advanced RAG ─────────────────────────────────────────────── */
+function AdvRag() {
+  return (
+    <>
+      <Lede>
+        The naive RAG loop — embed the question, pull top-k, stuff the prompt — gets you a demo. When
+        recall is poor, questions are multi-hop, or answers come back unfaithful, you reach for a
+        toolkit of upgrades on the same two paths from the <strong>RAG</strong> topic: transform the
+        query, retrieve better, and sometimes retrieve <em>in a loop</em>.
+      </Lede>
+
+      <Block eyebrow="fix the query first" title="Query transformation">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          The cheapest win is realizing the user's raw question is often a <em>bad search query</em>.
+          Rewrite or expand it before it ever hits the index. Three patterns worth naming:
+        </p>
+        <OpTable
+          cols={["Technique", "What it does", "", "Why it helps"]}
+          rows={[
+            { op: "Rewrite / expand", avg: "clean the query", avgTone: "good", why: "Resolve pronouns, add synonyms, split a compound question. Especially fixes follow-ups in a chat where 'it' has no meaning to a fresh search." },
+            { op: "HyDE", avg: "embed a fake answer", avgTone: "good", why: "Have the LLM hallucinate an ideal answer, then embed THAT and retrieve with it — answers look more like documents than questions do, so the vector lands closer to real passages." },
+            { op: "Multi-query", avg: "fan out rephrasings", avgTone: "ok", why: "Generate several phrasings, retrieve for each, union the results. Catches relevant chunks any single phrasing would have missed — at N× retrieval cost." },
+          ]}
+        />
+        <Callout kind="note" title="Why HyDE works">
+          Dense retrieval matches on similarity, and a question and its answer are written very
+          differently. HyDE closes that gap: a <em>hypothetical document</em> shares vocabulary and shape
+          with the real ones, so cosine similarity finds them even when the literal question wouldn't.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="retrieve better" title="Hybrid + rerank, recapped">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          From the <strong>RAG</strong> topic: combine <strong>dense</strong> (vector) and{" "}
+          <strong>BM25</strong> (keyword) retrieval and fuse the two ranked lists with{" "}
+          <strong>reciprocal rank fusion</strong>, then run a <strong>cross-encoder reranker</strong> over
+          the merged top-k for precision. Advanced RAG mostly stacks the query and graph tricks below{" "}
+          <em>on top of</em> this hybrid-plus-rerank base — it's the foundation, not an alternative.
+        </p>
+        <Callout kind="tip" title="RRF in one line">
+          Reciprocal rank fusion scores each chunk by 1/(k + rank) summed across the dense and sparse
+          lists — no tuning of relative weights, just 'agreed-on-by-both ranks high.' A robust default for
+          merging retrievers.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="structure & loops" title="GraphRAG and agentic retrieval">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Flat chunk retrieval struggles with two query shapes: <strong>multi-hop</strong> ('which
+          customers of the vendor we onboarded in Q1 churned?') and <strong>global</strong> /
+          summarization ('what are the main themes across these 500 reports?'). Two upgrades target them:
+        </p>
+        <OpTable
+          cols={["Approach", "How", "", "Strong for"]}
+          rows={[
+            { op: "GraphRAG", avg: "knowledge graph", avgTone: "good", why: "Extract entities and relationships from the corpus into a graph, then retrieve over nodes/edges (and community summaries). Connects facts that live in separate chunks." },
+            { op: "Iterative / agentic", avg: "retrieval in a loop", avgTone: "good", why: "Make retrieval a TOOL the agent calls: read results, decide it needs more, search again, then answer. Ties straight to the Agents topic's ReAct loop." },
+          ]}
+        />
+        <Callout kind="note" title="Where agentic RAG meets the Agents topic">
+          'Retrieve, read, decide, retrieve again' is just the <strong>Agents</strong> ReAct loop with
+          search as the tool. It costs one LLM call per hop, so cap the steps — but it's how you answer
+          questions a single retrieval can't.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="cheap, high-ROI tuning" title="Fine-tune the retriever, not the generator">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          A known high-leverage pattern: leave the generator general and <strong>fine-tune the embedding
+          model</strong> on domain query–document pairs. The retriever learns what 'relevant' means in{" "}
+          <em>your</em> corpus (your jargon, your product names), which lifts recall across every query —
+          and an embedding model is far smaller and cheaper to tune than the generator. You capture much of
+          fine-tuning's benefit at a fraction of the cost.
+        </p>
+        <Callout kind="tip" title="The decision, recapped from Fine-tuning">
+          Behavior → fine-tune, knowledge → RAG. Fine-tuning the <em>retriever</em> is a third lane: it
+          doesn't teach the model new facts, it teaches it to <em>find</em> your facts better. Pairs
+          cleanly with a general generator.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="prove it works" title="Evaluating RAG, RAGAS-style">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          You can't tune any of this blind. Decompose RAG quality so you know <em>which stage</em> to fix —
+          the RAGAS-style metrics, which split retrieval from generation:
+        </p>
+        <OpTable
+          cols={["Metric", "Measures", "", "Catches"]}
+          rows={[
+            { op: "Faithfulness", avg: "generation", avgTone: "good", why: "Is every claim in the answer grounded in the retrieved context? The core hallucination check." },
+            { op: "Answer relevance", avg: "generation", avgTone: "good", why: "Does the answer actually address the question, vs. true-but-off-topic padding?" },
+            { op: "Context precision", avg: "retrieval", avgTone: "good", why: "Of the chunks we retrieved, how many are actually relevant — and ranked high?" },
+            { op: "Context recall", avg: "retrieval", avgTone: "good", why: "Did we retrieve all the chunks needed to answer? Low recall caps everything downstream." },
+          ]}
+        />
+        <Callout kind="trap" title="Optimize the right stage">
+          A low <em>faithfulness</em> score is a generation problem (the model is ignoring or
+          embellishing the context); low <em>context recall</em> is a retrieval problem (the answer wasn't
+          there to ground on). Splitting the metric tells you which knob to turn — don't reach for a better
+          generator when retrieval is what failed.
+        </Callout>
+        <Callout kind="tip" title="The interview answer">
+          “When naive top-k stalls, I work the query and the retriever before the generator: rewrite or
+          HyDE the query, fan out multi-query, retrieve hybrid dense+BM25 with RRF, then cross-encoder
+          rerank. For multi-hop or global questions I reach for GraphRAG or agentic retrieval-in-a-loop,
+          and fine-tuning the <em>embedding</em> model is a cheap recall win. I evaluate RAGAS-style —
+          faithfulness and answer relevance for generation, context precision/recall for retrieval — so I
+          know which stage to fix.”
+        </Callout>
+      </Block>
+    </>
+  );
+}
+
+/* ── Tool use & MCP ───────────────────────────────────────────── */
+function ToolMcp() {
+  return (
+    <>
+      <Lede>
+        The <strong>Agents</strong> topic covered the loop; this is the layer underneath it — how a model
+        actually 'uses' a tool, and how the industry is standardizing the wiring between models and the
+        world. The 2026 headline is <strong>MCP</strong>: an open protocol that turns the N×M integration
+        mess into one plug.
+      </Lede>
+
+      <Block eyebrow="the mechanics, deeper" title="How a tool call really works">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Recapping from <strong>Agents</strong>: tools are exposed as <strong>typed JSON schemas</strong>{" "}
+          (name, description, parameters). The model can't run anything — it <em>emits a structured call</em>,
+          your runtime executes it, and the result re-enters the context as an observation. Two details
+          that come up in interviews: models can request <strong>parallel calls</strong> in one turn (fan
+          out independent lookups), and reliability lives in the runtime, not the model.
+        </p>
+        <OpTable
+          cols={["Concern", "The failure", "", "What you do"]}
+          rows={[
+            { op: "Bad arguments", avg: "wrong / malformed call", avgTone: "bad", why: "Validate against the schema before executing — clamp ranges, check types, reject the call and ask again if it's off." },
+            { op: "Tool errors", avg: "the call throws", avgTone: "ok", why: "Catch it and feed the error back as an observation so the model can adapt, instead of crashing the loop." },
+            { op: "Non-idempotent actions", avg: "double-charge, double-send", avgTone: "bad", why: "Guard writes/payments — confirmation steps, idempotency keys, dry-run. A retried tool call must not act twice." },
+          ]}
+        />
+        <Callout kind="warn" title="A tool call is untrusted output">
+          The same boundary as prompt injection: a model-proposed call is untrusted. Never let it trigger a
+          privileged action — delete data, move money, change permissions — without independent checks. The
+          model proposes; your code, with its own authorization, disposes.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="why standardize" title="The N×M integration mess">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Before any standard, every app wired tools and data sources to models its own way: each of{" "}
+          <strong>N</strong> applications hand-rolled an integration for each of <strong>M</strong> data
+          sources and tools. That's <strong>N×M</strong> bespoke connectors — a combinatorial mess where a
+          new database means re-implementing it in every app, and a new app means re-wiring every source.
+        </p>
+        <CodeBlock
+          title="text"
+          lang="text"
+          code={`without a standard:        with MCP:
+  app1 ─┬─ db              app1 ─┐
+  app2 ─┼─ files    →      app2 ─┼─ [MCP] ─┬─ db-server
+  app3 ─┴─ api             app3 ─┘         ├─ files-server
+   (N × M custom glue)                     └─ api-server
+                            (each side implements the protocol once)`}
+        />
+      </Block>
+
+      <Block eyebrow="the standard" title="MCP — 'USB-C for AI tools'">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          The <strong>Model Context Protocol (MCP)</strong> is an open standard that collapses N×M into
+          N+M. An MCP <strong>server</strong> exposes its capabilities — <strong>tools</strong> (actions to
+          call), <strong>resources</strong> (data to read), and <strong>prompts</strong> (reusable
+          templates) — and any MCP-compatible <strong>client</strong> (an IDE, an agent, a chat app) can
+          connect to it. Build the server once and every client can use it; build the client once and it
+          speaks to every server. That's the 'USB-C for AI tools' analogy: one connector, many devices.
+        </p>
+        <OpTable
+          cols={["MCP primitive", "Is", "", "Example"]}
+          rows={[
+            { op: "Tools", avg: "actions", avgTone: "good", why: "Functions the model can call — same typed-schema idea as tool calling, now served over a standard protocol." },
+            { op: "Resources", avg: "readable data", avgTone: "good", why: "Files, rows, documents the client can pull into context — the data side of the connection." },
+            { op: "Prompts", avg: "templates", avgTone: "ok", why: "Reusable, parameterized prompt snippets a server offers to clients for common workflows." },
+          ]}
+        />
+        <Callout kind="note" title="Where it sits vs the Agents topic">
+          The <strong>Agents</strong> loop is the brain — reason, act, observe. MCP is the{" "}
+          <strong>integration layer that loop calls into</strong>: when the agent decides to act, an MCP
+          client invokes a tool on an MCP server. It standardizes the agent↔tool/data plumbing so agents
+          become <em>pluggable</em> — point one at a new MCP server and it gains those capabilities with no
+          bespoke glue. A major 2026 trend for exactly that reason.
+        </Callout>
+        <Callout kind="warn" title="The security boundary doesn't move">
+          A standard wire doesn't make a tool trustworthy. An MCP server is still untrusted code returning
+          untrusted output: vet which servers a client connects to, scope their permissions, and keep the
+          'tool call can't trigger a privileged action unchecked' rule from the mechanics above.
+        </Callout>
+        <Callout kind="tip" title="The interview answer">
+          “A tool call is a contract: the model emits a structured call against a typed JSON schema, my
+          runtime validates the arguments and executes it, and the result re-enters context — I treat that
+          call as untrusted and guard non-idempotent actions. The integration problem is N×M bespoke
+          connectors, and <strong>MCP</strong> — an open client/server standard, 'USB-C for AI tools' —
+          fixes it: a server exposes tools, resources, and prompts, and any compatible client connects. It's
+          the pluggable tool/data layer the agent loop calls into.”
+        </Callout>
+      </Block>
+    </>
+  );
+}
+
 /* ── Compression ──────────────────────────────────────────────── */
 function Compress() {
   return (
@@ -893,6 +1104,8 @@ const CONTENT = {
   finetune: <FineTune />,
   prompt: <Prompt />,
   evals: <Evals />,
+  advrag: <AdvRag />,
+  toolmcp: <ToolMcp />,
   compress: <Compress />,
   classic: <Classic />,
   recsys: <RecSys />,

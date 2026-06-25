@@ -8,6 +8,7 @@ import EmbeddingsViz from "./ailab/EmbeddingsViz.jsx";
 import TokenizerViz from "./ailab/TokenizerViz.jsx";
 import GradientDescentViz from "./ailab/GradientDescentViz.jsx";
 import BiasVarianceViz from "./ailab/BiasVarianceViz.jsx";
+import MoeRoutingViz from "./ailab/MoeRoutingViz.jsx";
 
 const ACCENT = "#7c5cff";
 const { Block, Try } = withAccent(ACCENT);
@@ -17,9 +18,15 @@ const TOPICS = [
   { id: "embeddings", label: "Embeddings", group: "Transformer core" },
   { id: "tokenization", label: "Tokenization", group: "Transformer core" },
   { id: "sampling", label: "Sampling & decoding", group: "Generation" },
+  { id: "longcontext", label: "Long context", group: "Generation" },
   { id: "gradient", label: "Gradient descent", group: "Training" },
   { id: "biasvar", label: "Bias–variance", group: "Training" },
   { id: "block", label: "The transformer block", group: "Architecture" },
+  { id: "architectures", label: "CNNs, RNNs & beyond", group: "Architecture" },
+  { id: "moe", label: "Mixture of Experts", group: "Frontier models" },
+  { id: "reasoning", label: "Reasoning & test-time compute", group: "Frontier models" },
+  { id: "multimodal", label: "Multimodal models", group: "Frontier models" },
+  { id: "diffusion", label: "Diffusion models", group: "Frontier models" },
 ];
 
 /* ── Attention ────────────────────────────────────────────────── */
@@ -559,6 +566,161 @@ probs  = softmax(logits / T)     # T = temperature; -> probabilities summing to 
   );
 }
 
+/* ── Long context ─────────────────────────────────────────────── */
+function LongContext() {
+  return (
+    <>
+      <Lede>
+        "Long context" is the promise of dropping a whole codebase or book into one prompt — but it
+        isn't free. Attention is <strong>O(n²)</strong> in sequence length and the{" "}
+        <strong>KV cache grows linearly</strong> with it, so cost and memory climb fast. The real
+        story is the engineering that makes long windows usable at all: how positions are encoded and
+        stretched, which attention shortcuts buy back the quadratic cost, and where models quietly
+        stop paying attention.
+      </Lede>
+
+      <Block eyebrow="why it's hard" title="The cost is the whole problem">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Two costs scale with context length, and they're the reason long context is a hard problem
+          rather than a free upgrade. The attention score matrix is <code className="font-mono">n × n</code>,
+          so doubling the context <strong>quadruples</strong> attention compute and memory. Separately,
+          the <strong>KV cache</strong> — the stored keys and values for every past token — grows{" "}
+          <em>linearly</em> with length, and at long contexts it can dwarf the model's own weights in
+          GPU memory, which is what makes long-context serving so expensive per call.
+        </p>
+        <Callout kind="note" title="The detail lives in Attention">
+          The O(n²) score matrix, the KV cache, and exact-vs-approximate attention are covered in depth
+          in the <em>Attention</em> topic. Here we build on them and focus on what's specific to{" "}
+          <strong>making the window long</strong>: position encoding, extending the trained window, and
+          the failure modes.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="encoding & extending position" title="RoPE, and how to stretch a trained window">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          A transformer has no built-in sense of order, so position must be injected. The modern default
+          is <strong>RoPE (rotary position embeddings)</strong>: instead of adding a position vector, it{" "}
+          <em>rotates</em> the query and key vectors by an angle that depends on their position, so a dot
+          product naturally encodes <strong>relative</strong> distance between two tokens. The catch is
+          that a model trained with a 4k window has only ever seen those rotation angles — feed it 32k
+          tokens and the positions fall outside everything it learned, and quality collapses.
+        </p>
+        <p className="text-ink-dim leading-relaxed mb-2">
+          So a family of tricks <strong>rescale the positions</strong> to fit longer sequences into the
+          range the model already understands — squeeze, say, 32k positions back into the 4k it was
+          trained on:
+        </p>
+        <OpTable
+          cols={["Technique", "Idea", "", "Notes"]}
+          rows={[
+            { op: "Position interpolation", avg: "linearly squeeze", avgTone: "ok", why: "Scale every position down so a longer sequence maps into the trained range. Simple; usually needs a little fine-tuning to recover quality." },
+            { op: "NTK-aware scaling", avg: "frequency-aware squeeze", avgTone: "good", why: "Stretches low-frequency dimensions more than high-frequency ones, preserving fine local detail. Often works with little or no fine-tuning." },
+            { op: "YaRN", avg: "refined NTK + fine-tune", avgTone: "good", why: "A more careful frequency rescaling plus a short fine-tune; a common recipe for pushing a model to much longer windows with strong quality." },
+          ]}
+        />
+        <Callout kind="note" title="Why RoPE makes this possible at all">
+          Because RoPE encodes <em>relative</em> position by rotation, you can rescale the rotation
+          angles after training and the model still sees sensible relative distances. That's exactly the
+          handle these methods grab — you couldn't cleanly stretch a model with fixed learned position
+          embeddings the same way.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="attention shortcuts" title="Buying back the quadratic cost">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Extending positions lets a model <em>address</em> a long sequence; it doesn't make the O(n²)
+          attention affordable. Two angles attack that — compute the exact thing more cheaply, or
+          approximate it (recapped from <em>Attention</em>):
+        </p>
+        <OpTable
+          cols={["Variant", "Kind", "", "Trade-off"]}
+          rows={[
+            { op: "FlashAttention", avg: "exact, IO-aware", avgTone: "good", why: "Same result, never materializes the full n×n matrix — tiles it in fast on-chip memory. A pure speed/memory win, now standard." },
+            { op: "Sliding-window", avg: "local", avgTone: "ok", why: "Each token attends only to a fixed window of recent tokens → linear-ish cost. Long-range links survive only by stacking layers." },
+            { op: "Sparse / dilated", avg: "structured subset", avgTone: "ok", why: "Attend to a strided or dilated pattern (plus a few global tokens). Sub-quadratic, but quality depends on the pattern fitting the data." },
+          ]}
+        />
+        <Callout kind="trap" title="Exact vs approximate, again">
+          FlashAttention is the free one — it computes the <em>same</em> attention, just smarter about
+          memory traffic. Sliding-window, sparse, and dilated attention change <em>what</em> each token
+          can see, trading some quality for sub-quadratic cost.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="the quiet failure" title="Lost in the middle">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          A long context window is not the same as long context <em>use</em>. Models reliably exploit
+          information at the <strong>start</strong> and <strong>end</strong> of a long prompt but{" "}
+          <strong>degrade in the middle</strong> — recall sags for facts buried halfway down. So a
+          128k-token window doesn't mean all 128k tokens get equal attention; <em>position matters</em>.
+        </p>
+        <CodeBlock
+          title="text"
+          lang="text"
+          code={`recall along a long context:
+
+  START  ▇▇▇▇▇▇▇▇   high  (used reliably)
+  MIDDLE ▇▇▁▁▁▁▁▇   low   ← "lost in the middle"
+  END    ▇▇▇▇▇▇▇▇   high  (used reliably)`}
+        />
+        <Callout kind="tip" title="Practical consequence">
+          Put the most important content — the question, the key document, the instructions — at the{" "}
+          <strong>edges</strong> of the prompt, not buried in the middle of a huge dump. It's a cheap
+          win that costs nothing.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="the system-design call" title="Long context vs RAG">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          The architect's question is rarely "can it fit?" but "should it?" Stuffing everything into one
+          giant context is <strong>simple</strong> but costs tokens on every call and still suffers
+          lost-in-the-middle. <strong>RAG</strong> (retrieval-augmented generation) instead retrieves
+          only the relevant chunks and passes those — cheaper per call, easy to keep fresh, but you now
+          own a retrieval pipeline (embeddings, a vector index, chunking) that can fetch the wrong thing.
+        </p>
+        <OpTable
+          cols={["Approach", "Strength", "", "Cost"]}
+          rows={[
+            { op: "Big context", avg: "simple, no pipeline", avgTone: "ok", why: "Just paste it in — no retrieval to build or debug. But you pay for all those tokens every call and still hit lost-in-the-middle." },
+            { op: "RAG", avg: "cheap, fresh, scalable", avgTone: "good", why: "Retrieve only what's relevant → fewer tokens, easy to update, scales past any window. Adds a retrieval pipeline that can miss or fetch the wrong chunk." },
+          ]}
+        />
+        <Callout kind="note" title="Usually it's both">
+          These aren't exclusive. A common pattern is RAG to <em>narrow</em> to the relevant documents,
+          then a long context to reason over them together — retrieval for precision and freshness, a
+          big window for synthesis.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="measuring it" title="Needle in a haystack">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          You can't trust the advertised window length — you have to test whether the model actually{" "}
+          <em>uses</em> it. The standard probe is <strong>needle-in-a-haystack</strong>: plant a specific
+          fact (the "needle") at some depth inside a long filler context (the "haystack"), then ask a
+          question only that fact answers. Sweep the needle across many depths and context lengths and
+          you get a recall map — which is exactly how the lost-in-the-middle dip gets exposed.
+        </p>
+        <Callout kind="trap" title="A single needle is the easy version">
+          Real use is harder than one planted sentence. Multi-needle tests (several facts to retrieve and
+          combine) and reasoning-over-context tests are tougher and more honest — a model can ace a single
+          needle yet fail to <em>synthesize</em> across a long document.
+        </Callout>
+        <Callout kind="tip" title="The interview answer">
+          "Long context is hard because attention is O(n²) and the KV cache grows linearly, so it's
+          expensive, not free. RoPE encodes relative position by rotating Q/K, and you extend a trained
+          window by rescaling those positions — interpolation, NTK-aware scaling, YaRN. FlashAttention
+          makes the exact computation cheaper; sliding-window and sparse attention approximate it for
+          sub-quadratic cost. Watch for 'lost in the middle' — models use the start and end of a long
+          context far better than the middle, so put key content at the edges. And long context trades off
+          against RAG: a big window is simple but costly and still degrades in the middle, while RAG is
+          cheaper and fresher but adds a retrieval pipeline — often you combine them. Evaluate with
+          needle-in-a-haystack tests."
+        </Callout>
+      </Block>
+    </>
+  );
+}
+
 /* ── Gradient descent ─────────────────────────────────────────── */
 function Gradient() {
   return (
@@ -865,14 +1027,479 @@ function TBlock() {
   );
 }
 
+/* ── CNNs, RNNs & beyond ──────────────────────────────────────── */
+function DLArchitectures() {
+  return (
+    <>
+      <Lede>
+        Before transformers ate everything, the architecture <em>was</em> the design decision. The
+        real principle underneath: an architecture bakes in an <strong>inductive bias</strong> — an
+        assumption about the shape of the data. Match the bias to the data and you need less data and
+        less compute. A CNN assumes locality, an RNN assumes order, a transformer assumes everything
+        can attend to everything. Pick the one whose built-in assumption fits.
+      </Lede>
+
+      <Block eyebrow="grids & images" title="CNNs: locality and weight sharing">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          A <strong>convolutional</strong> layer slides a small filter across the image, computing the
+          same dot product at every position. Two ideas do the heavy lifting:{" "}
+          <strong>local receptive fields</strong> (a pixel is best explained by its neighbors, not the
+          whole image) and <strong>weight sharing</strong> (the same edge detector is reused
+          everywhere, which makes convolution <strong>translation-equivariant</strong> — shift the
+          input and the features shift with it — and slashes the parameter count versus a dense layer).{" "}
+          <strong>Pooling</strong> then downsamples so deeper layers see a wider area, and progressively
+          trades position for identity — that's what turns equivariance into <strong>invariance</strong>,
+          so a cat reads as a cat in any corner. This builds a <strong>hierarchy</strong>: early layers
+          learn edges, later ones learn textures, then object parts, then objects.
+        </p>
+        <CodeBlock
+          title="text"
+          lang="text"
+          code={`image ─> [conv+pool] ─> [conv+pool] ─> [conv+pool] ─> dense ─> class
+          edges      textures     object parts        "cat"
+          (small receptive field) ........... (large receptive field)`}
+        />
+        <Callout kind="note" title="ResNets unlocked depth">
+          Stacking many conv layers stopped helping — deeper nets trained <em>worse</em>.{" "}
+          <strong>Residual connections</strong> (the same skip-add you see in the transformer block)
+          gave gradients a clean path back, so 50- and 100-layer networks finally trained. It's the
+          same trick transformers later reused.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="sequences, the old way" title="RNNs & LSTMs: a hidden state walking the sequence">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          A <strong>recurrent</strong> net reads a sequence one step at a time, carrying a{" "}
+          <strong>hidden state</strong> forward as a running memory. Elegant, but it had two fatal
+          problems. <strong>Vanishing/exploding gradients</strong>: backprop through many steps
+          multiplies many small (or large) numbers, so signal from far back decays to nothing —
+          long-range dependencies were hard to learn. <strong>LSTMs</strong> (and GRUs) added{" "}
+          <strong>gates</strong> — learned valves that decide what to keep, forget, and output — which
+          let a cell carry information much further. But even LSTMs strained at very long range.
+        </p>
+        <Callout kind="trap" title="Why transformers replaced them">
+          The deeper problem was speed: an RNN is <strong>inherently sequential</strong> — step{" "}
+          <code className="font-mono">t</code> needs step <code className="font-mono">t−1</code>, so
+          you can't parallelize across the sequence on a GPU. Transformers process all positions at
+          once (attention is one big matrix multiply) <em>and</em> reach any token in a single hop.
+          Better long-range modeling and full parallelism — that combination is why they won.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="what comes after" title="State-space models & Mamba: a promising direction">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Attention's strength — every token sees every other — is also its cost:{" "}
+          <strong>O(n²)</strong> in sequence length, which gets brutal at very long context.{" "}
+          <strong>State-space models (SSMs)</strong> like <strong>Mamba</strong> revive the RNN idea
+          of a compact running state, but with a <em>selective</em> state and a formulation that runs
+          in <strong>linear time</strong> — roughly O(n) — and stays parallelizable to train. The pitch
+          is transformer-quality sequence modeling that scales far more cheaply to long context.
+        </p>
+        <Callout kind="note" title="Label it a direction, not a winner">
+          As of 2026 transformers remain dominant; SSMs/Mamba are a genuinely promising line of work
+          (and show up in hybrid models that mix attention and SSM layers), but they haven't displaced
+          attention at the frontier. Treat "what comes after transformers?" as open — Mamba is the
+          best-known candidate, not a settled answer.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="choosing" title="Match the architecture to the data shape">
+        <OpTable
+          cols={["Data", "Reach for", "", "Why it fits"]}
+          rows={[
+            { op: "Images / grids", avg: "CNN", avgTone: "good", why: "Locality + translation invariance are baked in; learns hierarchical visual features efficiently." },
+            { op: "Text / sequences", avg: "Transformer", avgTone: "good", why: "Long-range dependencies in one hop, fully parallel training, scales with data and compute." },
+            { op: "Tabular", avg: "Trees / GBMs", avgTone: "ok", why: "Gradient-boosted trees (XGBoost/LightGBM) still beat neural nets on most structured/tabular data." },
+            { op: "Very long sequences", avg: "SSM / Mamba", avgTone: "ok", why: "Linear-time alternative when O(n²) attention is the bottleneck — promising, not yet the default." },
+          ]}
+        />
+        <Callout kind="tip" title="The interview answer">
+          "Architecture is about matching an inductive bias to the data. Grids and images → CNNs
+          (locality, weight sharing, translation invariance). Sequences and text → transformers
+          (long-range, parallel). Tabular data → gradient-boosted trees, which still win there. RNNs/
+          LSTMs were the old sequence answer but couldn't parallelize and struggled with long range, so
+          transformers replaced them. What's next is likely state-space models like Mamba — linear-time
+          instead of O(n²) — but that's a promising direction, not a settled winner."
+        </Callout>
+      </Block>
+    </>
+  );
+}
+
+/* ── Mixture of Experts ───────────────────────────────────────── */
+function MoE() {
+  return (
+    <>
+      <Lede>
+        Mixture of Experts is the trick behind models that have hundreds of billions of parameters
+        but stay cheap to run. The idea: replace the single feed-forward block in each layer with{" "}
+        <strong>many</strong> feed-forward "experts" plus a tiny <strong>router</strong> that sends
+        each token to only a couple of them. Total parameters explode, but the compute spent on any
+        given token barely moves — because most experts sit idle.
+      </Lede>
+
+      <Try label="expert routing"><MoeRoutingViz /></Try>
+
+      <Block eyebrow="the mechanism" title="A router, many experts, top-k routing">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          In a dense transformer, every token flows through the same MLP. An MoE layer swaps that one
+          MLP for <strong>N expert MLPs</strong> (say 8) and a small{" "}
+          <strong>gating network / router</strong>. For each token the router scores the experts and
+          activates only the <strong>top-k</strong> (often top-2). The token is processed by just those
+          experts and their outputs are blended by the router's weights. This is{" "}
+          <strong>sparse activation</strong>: 8 experts exist, 2 run.
+        </p>
+        <CodeBlock
+          title="text"
+          lang="text"
+          code={`token ─> router (gating net) ─> scores over 8 experts
+                                 pick top-2:  E3 (0.7), E6 (0.3)
+        ┌─> Expert 3 ─┐
+token ──┤             ├─> 0.7·E3(token) + 0.3·E6(token) ─> out
+        └─> Expert 6 ─┘
+        (Experts 1,2,4,5,7,8 are NOT run for this token)`}
+        />
+        <Callout kind="note" title="Sparse vs dense, in one line">
+          A dense model uses 100% of its parameters on every token. An MoE uses a small{" "}
+          <em>fraction</em> per token — which is exactly how it decouples size from cost.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="why bother" title="Decouple capacity from compute">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          The whole point: <strong>total parameters</strong> (how much the model can know) and{" "}
+          <strong>compute per token</strong> (what it costs to run) are usually locked together — a
+          bigger dense model is both smarter and proportionally more expensive. MoE breaks that link.
+          You can grow total capacity by adding experts while keeping <strong>active</strong>{" "}
+          parameters — and therefore FLOPs per token and latency — roughly flat.
+        </p>
+        <Callout kind="tip" title="The headline trade">
+          A Mixtral-style 8×7B model has ~47B total parameters but only activates ~13B per token. You
+          pay roughly 13B-model inference compute for closer to 47B-model knowledge. That's the pitch:{" "}
+          <strong>huge models that are cheap per token</strong>.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="making it train" title="Load balancing and expert capacity">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Left alone, the router cheats: it finds a couple of good experts and sends everything there,
+          so the rest never train — a collapse. Two mechanisms prevent it. A{" "}
+          <strong>load-balancing auxiliary loss</strong> is added to the objective to reward spreading
+          tokens evenly across experts. And each expert has a fixed{" "}
+          <strong>capacity</strong> — a cap on how many tokens it handles per batch; overflow tokens get
+          dropped (passed through unchanged) so no single expert becomes a bottleneck.
+        </p>
+        <Callout kind="note" title="The router is the whole ballgame">
+          Routing is a discrete top-k choice, which is hard to train and prone to instability. Most of
+          the engineering in MoE — auxiliary losses, capacity factors, noise — exists to keep the router
+          balanced and the experts all learning.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="the catch" title="Memory, instability, and serving cost">
+        <OpTable
+          cols={["Cost", "What bites", "", "Detail"]}
+          rows={[
+            { op: "VRAM", avg: "all experts resident", avgTone: "bad", why: "Only k experts run per token, but ALL of them must sit in GPU memory. MoE is memory-heavy, not compute-heavy." },
+            { op: "Training", avg: "instability", avgTone: "bad", why: "Discrete routing + load balancing make training finicky and sensitive to hyperparameters." },
+            { op: "Communication", avg: "token routing", avgTone: "ok", why: "Experts are sharded across devices, so tokens get shuffled between GPUs (all-to-all) — real overhead at scale." },
+            { op: "Serving", avg: "uneven load", avgTone: "ok", why: "Batches route unpredictably across experts, making latency and utilization harder to keep smooth." },
+          ]}
+        />
+        <Callout kind="trap" title="The memory point people miss">
+          MoE saves <em>compute</em>, not <em>memory</em>. You still need enough VRAM to hold every
+          expert even though only k fire per token — which is why these models are large to host but
+          fast to run.
+        </Callout>
+        <Callout kind="tip" title="The interview answer">
+          "MoE replaces the dense feed-forward block with many expert FFNs plus a router that sends each
+          token to its top-k experts — usually top-2 — so activation is sparse. That decouples total
+          parameters from compute per token: you get a huge, knowledgeable model that's cheap to run
+          because most experts stay idle. The costs are that all experts must live in VRAM, training is
+          unstable so you need a load-balancing loss and expert capacity limits, and routing adds
+          communication overhead. Mixtral 8×7B and DeepSeek-MoE are the canonical examples."
+        </Callout>
+      </Block>
+    </>
+  );
+}
+
+/* ── Reasoning & test-time compute ────────────────────────────── */
+function Reasoning() {
+  return (
+    <>
+      <Lede>
+        The big shift behind "reasoning models" is from <strong>answer immediately</strong> to{" "}
+        <strong>think first</strong>. Instead of emitting the answer in one shot, the model generates a
+        long internal chain-of-thought — working, checking, backtracking — before committing. The
+        surprising result: spending more compute <em>at inference time</em> can beat spending it on a
+        bigger model, especially for math, code, and logic.
+      </Lede>
+
+      <Block eyebrow="the shift" title="Think before you answer">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          A standard LLM is trained to produce the final answer directly. A{" "}
+          <strong>reasoning model</strong> first generates a long internal reasoning trace — exploring
+          steps, catching its own mistakes, trying another route — and only then writes the answer. The
+          long "thinking" tokens are the model doing work, not stalling. For hard problems this
+          dramatically lifts accuracy; for trivial ones it's wasted effort.
+        </p>
+        <CodeBlock
+          title="text"
+          lang="text"
+          code={`standard:   prompt ─────────────────────────> answer
+reasoning:  prompt ─> [ long chain-of-thought:
+                        try... check... that's wrong... backtrack...
+                        verify... ] ─────────────> answer`}
+        />
+      </Block>
+
+      <Block eyebrow="the scaling axis" title="Test-time (inference-time) compute scaling">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          For years the lever was <strong>train-time scaling</strong>: more parameters, more data.{" "}
+          <strong>Test-time scaling</strong> adds a second axis — spend more compute <em>per query</em>
+          at inference (a longer chain-of-thought, sampling many answers and voting, or searching over
+          paths). On reasoning-heavy benchmarks, letting a model think longer can outperform a much
+          larger model that answers instantly. Two dials now matter, not one.
+        </p>
+        <Callout kind="tip" title="The reframing">
+          "You can buy accuracy with inference compute, not just training compute." A smaller model that
+          thinks for 10,000 tokens can beat a bigger model that answers in 100 — on the right problems.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="how they're built" title="RL on reasoning traces">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          These models are largely trained with <strong>reinforcement learning</strong> on reasoning,
+          using <strong>outcome rewards</strong> — did the final answer check out (the math is right,
+          the code passes the tests)? Rewarding correct <em>outcomes</em> rather than imitating a fixed
+          human trace lets the model discover its own strategies: it learns to{" "}
+          <strong>self-correct</strong>, verify, and backtrack. The o1- and R1-style models came out of
+          this recipe, and a striking finding was that useful long-form reasoning can{" "}
+          <em>emerge</em> from outcome-based RL.
+        </p>
+        <Callout kind="note" title="Outcome vs process reward">
+          You can reward only the final answer (<strong>outcome reward</strong>) or grade each
+          intermediate step (a <strong>process reward model</strong>). Process rewards give denser
+          signal and can curb plausible-but-wrong reasoning, at the cost of needing step-level judgments.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="the techniques" title="CoT, self-consistency, best-of-N, search">
+        <OpTable
+          cols={["Technique", "What it does", "", "Cost"]}
+          rows={[
+            { op: "Chain-of-thought", avg: "reason step by step", avgTone: "good", why: "Generate intermediate steps before the answer. The foundation everything else builds on." },
+            { op: "Self-consistency", avg: "sample N, majority vote", avgTone: "good", why: "Draw several independent CoTs, take the most common answer. Cancels out one-off reasoning slips." },
+            { op: "Best-of-N + verifier", avg: "sample N, pick best", avgTone: "ok", why: "A verifier or process-reward model scores candidates and selects the strongest, instead of voting." },
+            { op: "Tree-of-thoughts", avg: "search over branches", avgTone: "ok", why: "Explore and prune a tree of reasoning paths. Most powerful, most expensive — heavy token use." },
+          ]}
+        />
+        <Callout kind="trap" title="The trade-off">
+          All of this burns far more tokens, which means higher <strong>latency and cost</strong>. For a
+          simple lookup or a format conversion it's pure overhead — reasoning mode is overkill for easy
+          tasks. Spend the thinking budget where the problem is actually hard.
+        </Callout>
+        <Callout kind="tip" title="The interview answer">
+          "Reasoning models shift compute from training to inference: instead of answering immediately,
+          they generate a long chain-of-thought — checking and backtracking — before the final answer.
+          Test-time scaling means more inference compute (longer CoT, sample-N-and-vote, search) can beat
+          a bigger model on math, code, and logic. They're trained with RL on outcome rewards, learning
+          to self-correct, which is the o1/R1 recipe. Techniques include chain-of-thought,
+          self-consistency, best-of-N with a verifier, and tree-of-thoughts search. The cost is far more
+          tokens — higher latency and price — so it's overkill for easy tasks."
+        </Callout>
+      </Block>
+    </>
+  );
+}
+
+/* ── Multimodal models ────────────────────────────────────────── */
+function Multimodal() {
+  return (
+    <>
+      <Lede>
+        A multimodal model handles more than text — images, audio, video — inside a single model. The
+        core trick is unification: every modality is turned into the <em>same kind of thing</em>, a
+        vector in a shared embedding space or a token in one stream, so a language model can read a
+        picture the same way it reads words. By 2026 the top models are{" "}
+        <strong>natively multimodal</strong>, trained across modalities from the start rather than
+        bolting on a vision module.
+      </Lede>
+
+      <Block eyebrow="the core idea" title="One shared space for many modalities">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Text, pixels, and audio are wildly different signals. The unifying move is to{" "}
+          <strong>encode each modality into a common embedding space</strong> — or, equivalently, into
+          tokens drawn into one sequence. Once an image is "tokens" and text is "tokens," attention can
+          mix them freely, and the model reasons over a picture and a question together. The shared
+          space <em>is</em> the architecture.
+        </p>
+      </Block>
+
+      <Block eyebrow="vision into an LLM" title="The LLaVA pattern: encoder → projector → LLM">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          The most common recipe wires a vision model into a text LLM. A{" "}
+          <strong>vision encoder</strong> (typically a <strong>ViT</strong>, which chops an image into
+          patches and embeds each like a token) turns the image into a set of visual features. A small{" "}
+          <strong>projector</strong> maps those features into the LLM's token-embedding space, and from
+          there the <strong>LLM</strong> consumes them right alongside the text tokens.
+        </p>
+        <CodeBlock
+          title="text"
+          lang="text"
+          code={`image ─> Vision Encoder (ViT) ─> projector ─> image tokens ─┐
+                                                              ├─> LLM ─> answer
+text  ────────────────────────────────────> text tokens ─────┘`}
+        />
+        <Callout kind="note" title="Why this works">
+          The LLM never has to learn vision from scratch. A pretrained encoder already "sees," a
+          lightweight projector translates that into the LLM's language, and the LLM brings its
+          reasoning. It's modular and cheap to train relative to building one model end to end.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="aligning text & images" title="CLIP: contrastive image–text training">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          <strong>CLIP</strong> is the workhorse for connecting vision and language. It trains an image
+          encoder and a text encoder together with a <strong>contrastive</strong> objective: across a
+          big batch of image–caption pairs, pull each image close to its <em>own</em> caption and push
+          it away from all the others. The result is a single space where a photo of a dog and the words
+          "a dog" land near each other.
+        </p>
+        <Callout kind="tip" title="Why CLIP matters">
+          Because matching images and text share a space, you get <strong>zero-shot
+          classification</strong> (compare an image to label texts, pick the nearest) and{" "}
+          <strong>cross-modal retrieval</strong> (search images with a text query) for free — no
+          per-task training. CLIP-style encoders are also what many vision-language models plug in.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="what it unlocks" title="Uses, and the native-multimodal shift">
+        <OpTable
+          cols={["Use", "What it does", "", "Why multimodal fits"]}
+          rows={[
+            { op: "Document understanding", avg: "read layout + text", avgTone: "good", why: "Handles tables, charts, and forms by seeing the page — OCR-free, layout-aware." },
+            { op: "Image Q&A", avg: "answer about a picture", avgTone: "good", why: "Grounds the answer in pixels: 'what's wrong in this diagram?', 'how many people?'" },
+            { op: "Retrieval / search", avg: "text↔image matching", avgTone: "ok", why: "Shared space lets you search images by text and vice versa (CLIP-style)." },
+            { op: "Vision-language-action", avg: "perceive → act", avgTone: "ok", why: "Robotics: map camera input + instruction directly to actions in one model." },
+          ]}
+        />
+        <Callout kind="tip" title="The interview answer">
+          "A multimodal model handles several modalities in one model by encoding each into a shared
+          embedding space or token stream. The common pattern is a vision encoder — usually a ViT — that
+          turns an image into tokens an LLM consumes, via a projector (the LLaVA recipe: encoder →
+          projector → LLM). CLIP trains image and text encoders contrastively so matching pairs sit close
+          together, which gives zero-shot classification and cross-modal retrieval. Uses include document
+          understanding, image Q&A, OCR-free reading, and vision-language-action for robotics. By 2026 the
+          top models are natively multimodal — trained across modalities from the start, not bolted on."
+        </Callout>
+      </Block>
+    </>
+  );
+}
+
+/* ── Diffusion models ─────────────────────────────────────────── */
+function Diffusion() {
+  return (
+    <>
+      <Lede>
+        Diffusion models are the engine behind modern image, video, and audio generation. The idea is
+        almost paradoxical: teach a model to <strong>remove noise</strong>, one small step at a time,
+        and then generate by handing it <em>pure noise</em> and asking it to clean it up into a sample.
+        Run that denoising loop and a coherent image emerges from static.
+      </Lede>
+
+      <Block eyebrow="forward & reverse" title="Add noise to learn, remove noise to generate">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Training has two halves. The <strong>forward process</strong> gradually corrupts a real
+          image by adding Gaussian noise over many steps until it's indistinguishable from static — this
+          part is fixed, no learning. The model learns the <strong>reverse process</strong>: given a
+          noisy image, predict the noise so it can be subtracted, nudging the image one step cleaner.
+          Because the forward path is known, every step gives a free training target.
+        </p>
+        <CodeBlock
+          title="text"
+          lang="text"
+          code={`forward (fixed):   image ─> +noise ─> +noise ─> ... ─> pure noise
+reverse (learned): pure noise ─> denoise ─> denoise ─> ... ─> image
+                   (model predicts & subtracts the noise at each step)`}
+        />
+      </Block>
+
+      <Block eyebrow="sampling & prompts" title="From static to image, conditioned on text">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          To <strong>generate</strong>, start from pure random noise and apply the learned denoiser
+          repeatedly — say 20–50 steps — each one removing a little more noise until an image appears.
+          For <strong>text-to-image</strong>, the prompt is encoded (often by a CLIP-style text encoder)
+          and fed into the denoiser via <strong>cross-attention</strong>, so the network is steered to
+          denoise <em>toward</em> something that matches the words at every step.
+        </p>
+        <Callout kind="note" title="The prompt conditions every step">
+          Text-to-image isn't a one-time filter at the end. The prompt guides the denoiser the whole way
+          down, which is why diffusion follows detailed prompts so well — every step is pulled toward the
+          description.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="the speed trick" title="Latent diffusion: denoise in a compressed space">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Running dozens of denoising steps on full-resolution pixels is slow.{" "}
+          <strong>Latent diffusion</strong> (the basis of <strong>Stable Diffusion</strong>) first uses
+          an autoencoder to compress the image into a much smaller <strong>latent space</strong>, runs
+          the whole noisy-to-clean diffusion process there, then decodes the final latent back to pixels.
+          Same approach, a fraction of the compute — which is what made high-quality image generation
+          run on a consumer GPU.
+        </p>
+      </Block>
+
+      <Block eyebrow="trade-offs" title="Vs GANs & autoregressive — and what's next">
+        <OpTable
+          cols={["Approach", "Strength", "", "Weakness"]}
+          rows={[
+            { op: "Diffusion", avg: "quality + diversity", avgTone: "good", why: "High-fidelity, diverse samples and stable training — but SLOW: generation needs many denoising steps." },
+            { op: "GANs", avg: "fast (one pass)", avgTone: "ok", why: "Single forward pass to generate, but training is unstable and prone to mode collapse (low diversity)." },
+            { op: "Autoregressive", avg: "one token at a time", avgTone: "ok", why: "Strong control and coherence, but sequential pixel/token generation is slow for high-res images." },
+          ]}
+        />
+        <Callout kind="trap" title="Diffusion's real cost is speed">
+          The many-step sampling loop makes diffusion inherently slower than a one-shot GAN. The active
+          fix is <strong>distillation</strong> and <strong>few-step samplers</strong> that cut 50 steps
+          down to a handful (even one), trading a little quality for big speedups.
+        </Callout>
+        <Callout kind="note" title="Diffusion for text is emerging">
+          The forward/reverse recipe is spreading beyond images: <strong>diffusion language models</strong>{" "}
+          generate text by denoising all positions in parallel rather than left-to-right, a promising
+          alternative to autoregressive LLMs — still early, but worth knowing it exists.
+        </Callout>
+        <Callout kind="tip" title="The interview answer">
+          "Diffusion models learn to reverse noise. A fixed forward process adds Gaussian noise to data
+          step by step; the model learns to denoise. You generate by starting from pure noise and
+          iteratively denoising into a sample, and for text-to-image the prompt conditions the denoiser
+          via cross-attention at every step. Latent diffusion, like Stable Diffusion, runs this in a
+          compressed latent space for speed. Versus GANs and autoregressive models, diffusion gives high
+          quality, diversity, and stable training but is slow — many steps — which distillation and
+          few-step samplers address. There's also emerging diffusion-for-text."
+        </Callout>
+      </Block>
+    </>
+  );
+}
+
 const CONTENT = {
   attention: <Attention />,
   embeddings: <Embeddings />,
   tokenization: <Tokenization />,
   sampling: <Sampling />,
+  longcontext: <LongContext />,
   gradient: <Gradient />,
   biasvar: <BiasVar />,
   block: <TBlock />,
+  architectures: <DLArchitectures />,
+  moe: <MoE />,
+  reasoning: <Reasoning />,
+  multimodal: <Multimodal />,
+  diffusion: <Diffusion />,
 };
 
 export default function AiLab() {

@@ -8,6 +8,7 @@ import AiLab from "./tools/AiLab.jsx";
 import ModelBench from "./tools/ModelBench.jsx";
 import Selector from "./tools/Selector.jsx";
 import ArchitectBench from "./tools/ArchitectBench.jsx";
+import Foundations from "./tools/Foundations.jsx";
 
 export const TOOLS = [
   {
@@ -89,6 +90,16 @@ export const TOOLS = [
     accent: "#fb6f3c",
     status: "ready",
     Comp: ArchitectBench,
+  },
+  {
+    path: "foundations",
+    track: "ai",
+    name: "Foundations",
+    tag: "Fundamentals · the MATH",
+    desc: "Probability, linear algebra, information theory, and the classic-ML toolkit the screens still gate on.",
+    accent: "#2dd4bf",
+    status: "ready",
+    Comp: Foundations,
   },
 ];
 

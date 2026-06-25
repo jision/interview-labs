@@ -12,6 +12,7 @@ const ACCENT = "#ffb703";
 const { Block, Try } = withAccent(ACCENT);
 
 const TOPICS = [
+  { id: "framing", label: "Problem framing", group: "Decide" },
   { id: "approach", label: "Approach decoder", group: "Decide" },
   { id: "buildbuy", label: "Build vs buy", group: "Decide" },
   { id: "budget", label: "Cost / latency / quality", group: "Decide" },
@@ -19,6 +20,148 @@ const TOPICS = [
   { id: "metric", label: "Metric selector", group: "Recall" },
   { id: "disambig", label: "Disambiguation", group: "Recall" },
 ];
+
+/* ── Problem framing ──────────────────────────────────────────── */
+function Framing() {
+  return (
+    <>
+      <Lede>
+        The meta-skill interviewers reward most: turning a vague business goal into a{" "}
+        <strong>well-posed ML problem</strong>. Before any architecture, you scope it — what success
+        means, whether ML is even the right tool, the task and label, the metric, and the constraints.
+        In 2026 ML-system-design rounds this scoping <em>is</em> the differentiator.
+      </Lede>
+
+      <Block eyebrow="start here" title="The goal, not the model">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          The first move is to <strong>resist jumping to architectures</strong>. Before "I'd use a
+          two-tower retriever…", clarify the <strong>business objective</strong> and exactly{" "}
+          <strong>how success is measured</strong> — the business KPI. "Reduce churn," "lift
+          add-to-cart," "cut fraud loss by 20%." Everything downstream — the task, the label, the
+          metric, the constraints — is derived from that one sentence, so getting it precise is the
+          highest-leverage thing you do in the whole round.
+        </p>
+        <p className="text-ink-dim leading-relaxed mb-2">
+          A goal stated as a model ("we need a recommender") hides the actual objective and quietly
+          decides the design for you. Restate it as an outcome ("we want users to find relevant items
+          faster, measured by click-through and session length") and the design space reopens —
+          maybe ranking, maybe better search, maybe no ML at all.
+        </p>
+        <Callout kind="tip" title="Anchor every round to the KPI">
+          "What business metric are we trying to move, and how will we know it moved?" Pin that first.
+          It turns a vague prompt into a target you can actually design against — and it's the
+          question that separates a scoped answer from a pile of boxes.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="the honest first question" title="Should this even be ML?">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          A <strong>rules / heuristic baseline</strong> often wins, and proposing it first is a senior
+          signal, not a junior one. ML earns its complexity only when the pattern is{" "}
+          <strong>hard to specify by hand</strong> <em>and</em> you have the <strong>data</strong> plus
+          a <strong>feedback signal</strong> to learn and keep learning from it. If a dozen
+          if-statements get you 90% of the value, ship those and revisit ML when they plateau.
+        </p>
+        <OpTable
+          cols={["Signal", "Points toward", "", "Why"]}
+          rows={[
+            { op: "Pattern is easy to write down", avg: "rules / heuristics", avgTone: "good", why: "If you can specify it, code it. No data, no training, fully debuggable." },
+            { op: "Pattern is hard to specify, data exists", avg: "ML", avgTone: "ok", why: "Learning from examples beats hand-tuning when the rule is fuzzy or high-dimensional." },
+            { op: "No labels / no feedback loop", avg: "not ML (yet)", avgTone: "bad", why: "Without a signal to learn from and measure against, ML can't earn its keep." },
+            { op: "Real cost of being wrong is tiny", avg: "rules / heuristics", avgTone: "good", why: "Don't spend a model where a default value or simple rule is good enough." },
+          ]}
+        />
+        <Callout kind="note" title="Always propose the simple baseline first">
+          Even when ML is clearly right, name the heuristic baseline out loud — it sets the bar the
+          model has to beat, gives you a fallback for cold start, and shows you optimize for impact,
+          not for getting to use a model.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="make it well-posed" title="Frame the task, define the label and data">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Once ML is justified, map the goal to a <strong>task type</strong>, then nail down the{" "}
+          <strong>label</strong> (what you predict) and the <strong>data</strong> (what you have, and
+          how feedback flows back). This is the step that turns a goal into a problem a model can
+          actually be trained on.
+        </p>
+        <OpTable
+          cols={["Goal sounds like…", "Task type", "", "Label / target"]}
+          rows={[
+            { op: "Will this user churn / convert?", avg: "binary classification", avgTone: "good", why: "Did the event happen in the window? A 0/1 label from logged outcomes." },
+            { op: "Which category does this belong to?", avg: "multiclass classification", avgTone: "good", why: "One label out of K classes — topic, intent, product category." },
+            { op: "How much / how many?", avg: "regression", avgTone: "good", why: "A continuous target — price, demand, time-to-event." },
+            { op: "What should we show, in what order?", avg: "ranking / recommendation", avgTone: "ok", why: "Relevance/engagement per item; learn an ordering, not a single class." },
+            { op: "Write / summarize / answer this", avg: "generation", avgTone: "ok", why: "Open-ended output; the 'label' is reference text or human/judge preference." },
+            { op: "Is this weird / unexpected?", avg: "anomaly detection", avgTone: "ok", why: "Few or no positive labels; model the normal, flag the outliers." },
+          ]}
+        />
+        <Callout kind="trap" title="The label and feedback loop are where it gets real">
+          "Predict churn" sounds clean until you define it: churn within how many days? Measured how?
+          And does the outcome flow back as a label to retrain on? A goal you can't turn into a
+          concrete label and a feedback signal isn't a well-posed ML problem yet — that's the gap
+          interviewers probe.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="tie it to the goal" title="Pick the metric, then name the constraints">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Choose an <strong>offline metric</strong> (precision/recall, nDCG, RMSE, …) that{" "}
+          <em>correlates with the online business metric</em> — the offline number is a proxy you can
+          iterate on fast, but it only matters insofar as it moves the KPI. And name the{" "}
+          <strong>cost of each error type</strong>: a false positive and a false negative almost never
+          cost the same, so <strong>precision vs recall is a business call</strong>, not a default.
+        </p>
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Then surface the <strong>constraints early</strong>, because they prune the design space
+          before you draw a single box:
+        </p>
+        <OpTable
+          cols={["Constraint", "Ask", "", "What it prunes"]}
+          rows={[
+            { op: "Latency SLO", avg: "p95 budget?", avgTone: "ok", why: "Rules out heavy models / long reasoning if it's a tight online path." },
+            { op: "Cost ceiling", avg: "$/request?", avgTone: "ok", why: "Caps model size, sampling, and how much retrieval you can afford." },
+            { op: "Interpretability / regulatory", avg: "must we explain it?", avgTone: "ok", why: "Finance/health/gov may force simpler, auditable models over black boxes." },
+            { op: "Data freshness", avg: "how stale is OK?", avgTone: "ok", why: "Decides batch vs streaming features and retrain cadence." },
+            { op: "Scale", avg: "QPS / # items?", avgTone: "ok", why: "Shapes serving, indexing, and whether candidate generation is even needed." },
+          ]}
+        />
+        <Callout kind="note" title="Constraints are scoping, not afterthoughts">
+          A latency SLO or a 'must be explainable' requirement can eliminate most of the model menu in
+          one sentence. Asking for them up front is what makes the rest of the design fast and
+          defensible.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="say it cleanly" title="The standard skeleton, out loud">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Frame the whole round as a roadmap and <em>say it first</em>:{" "}
+          <strong>requirements → data → model/baseline → evaluation (offline + online) → serving →
+          monitoring</strong>. Naming the skeleton up front signals you've done this before and gives
+          the interviewer a map to follow — then you walk each box deliberately instead of
+          free-associating.
+        </p>
+        <Callout kind="trap" title="A diagram with no requirements is the classic fail">
+          The most common way candidates lose this round is a confident architecture diagram with no
+          objective, no metric, and no constraints behind it. Interviewers are grading the scoping —
+          the goal, the task, the label, the metric, the trade-offs — not the boxes. Boxes without
+          framing read as memorized; framing without perfect boxes reads as senior.
+        </Callout>
+        <Callout kind="tip" title="The interview answer">
+          "Before I design anything I scope it. First the business goal and the KPI we're moving. Then
+          the honest question — does this even need ML, or does a heuristic baseline win? If ML earns
+          it, I frame the task (classification, ranking, regression, generation, anomaly…), define the
+          label and the data and feedback loop, and pick an offline metric that correlates with the
+          online KPI — naming which error is more expensive, because precision-vs-recall is a business
+          call. I surface constraints early — latency, cost, interpretability, freshness, scale —
+          because they prune the design space. Then I walk the skeleton: requirements → data →
+          model/baseline → evaluation → serving → monitoring. The scoping is the answer; the diagram
+          is just the last step."
+        </Callout>
+      </Block>
+    </>
+  );
+}
 
 /* ── Approach decoder ─────────────────────────────────────────── */
 function Approach() {
@@ -571,6 +714,7 @@ function Disambig() {
 }
 
 const CONTENT = {
+  framing: <Framing />,
   approach: <Approach />,
   buildbuy: <BuildBuy />,
   budget: <Budget />,
