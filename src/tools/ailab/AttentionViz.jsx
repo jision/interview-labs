@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
 /*
- * Attention heatmap — baked fixture, no model in the browser.
+ * Attention heatmap, baked fixture, no model in the browser.
  * The classic coreference example: "it" attends back to "cat".
  * Rows = query token (who is looking), columns = key token (what it looks at).
  * Each row is a softmax distribution (sums to ~1).
@@ -10,7 +10,7 @@ const ACCENT = "#7c5cff";
 
 const TOKENS = ["The", "cat", "sat", "because", "it", "was", "tired"];
 
-// W[query][key] — hand-authored to look like a trained head doing coreference.
+// W[query][key], hand-authored to look like a trained head doing coreference.
 const W = [
   [0.52, 0.28, 0.08, 0.03, 0.03, 0.02, 0.04], // The
   [0.22, 0.40, 0.20, 0.04, 0.05, 0.03, 0.06], // cat
@@ -33,7 +33,7 @@ export default function AttentionViz() {
   return (
     <div className="rounded-xl border border-line bg-surface p-4 md:p-5">
       <div className="text-sm text-ink-dim mb-3">
-        Pick a <span className="text-ink font-semibold">query</span> token — the row shows how
+        Pick a <span className="text-ink font-semibold">query</span> token, the row shows how
         much it attends to every other token. Watch <code className="font-mono text-ink">it</code>{" "}
         point back at <code className="font-mono text-ink">cat</code>.
       </div>

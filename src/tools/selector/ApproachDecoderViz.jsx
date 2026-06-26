@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Btn } from "../../components/ui.jsx";
 
 /*
- * Approach decoder — the signature Selector widget.
+ * Approach decoder, the signature Selector widget.
  * A short branching Q&A that lands on prompt / RAG / fine-tune / pretrain
  * with the reasoning and watch-outs. Pure decision logic, no data needed.
  */
@@ -12,7 +12,7 @@ const RESULTS = {
   prompt: {
     title: "Prompt engineering",
     color: "#4ade80",
-    why: "A strong base model already has the capability — you just need to elicit it. Cheapest, fastest, no infra.",
+    why: "A strong base model already has the capability, you just need to elicit it. Cheapest, fastest, no infra.",
     watch: "Invest in few-shot examples and structured output before assuming you need anything heavier.",
   },
   rag: {
@@ -25,7 +25,7 @@ const RESULTS = {
     title: "Fine-tune (LoRA first)",
     color: "#ffb703",
     why: "The model knows enough but won't reliably follow your format, style, or policy. Bake the behavior into weights.",
-    watch: "Start with LoRA on a small curated set. You re-tune on every base-model upgrade — it's a maintenance cost.",
+    watch: "Start with LoRA on a small curated set. You re-tune on every base-model upgrade, it's a maintenance cost.",
   },
   hybrid: {
     title: "RAG + fine-tune (hybrid)",
@@ -42,7 +42,7 @@ const RESULTS = {
   descope: {
     title: "Re-scope (prompt + RAG for now)",
     color: "#00b4d8",
-    why: "Closing a genuine capability gap needs lots of data and real budget — which you don't have here. The pragmatic move is to re-scope to what a strong base model + RAG/few-shot can already do well.",
+    why: "Closing a genuine capability gap needs lots of data and real budget, which you don't have here. The pragmatic move is to re-scope to what a strong base model + RAG/few-shot can already do well.",
     watch: "Ship the achievable version, gather real usage data, and revisit fine-tuning or pretraining only once the gap (and the budget to close it) is proven.",
   },
 };
@@ -52,7 +52,7 @@ const TREE = {
   start: {
     q: "What fails when you send a plain prompt to a strong base model?",
     opts: [
-      { label: "Nothing — it basically works", to: "prompt" },
+      { label: "Nothing, it basically works", to: "prompt" },
       { label: "It lacks facts (private / internal / recent data)", to: "knowledge" },
       { label: "It has the facts but won't follow our format / style / policy", to: "finetune" },
       { label: "It lacks a whole skill or domain entirely", to: "scratch" },
@@ -61,8 +61,8 @@ const TREE = {
   knowledge: {
     q: "Does it ALSO need to follow a strict format / style / policy?",
     opts: [
-      { label: "No — just needs the right facts", to: "rag" },
-      { label: "Yes — facts AND consistent behavior", to: "hybrid" },
+      { label: "No, just needs the right facts", to: "rag" },
+      { label: "Yes, facts AND consistent behavior", to: "hybrid" },
     ],
   },
   scratch: {

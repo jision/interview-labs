@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Btn } from "../../components/ui.jsx";
 
 /*
- * Disambiguation deck — a flashcard for each common fork.
+ * Disambiguation deck, a flashcard for each common fork.
  * Front = the fork; click to flip → the single pivot question + answer rule.
  * next / prev step through the deck; clicking the card flips it.
  */
@@ -22,11 +22,11 @@ const CARDS = [
   {
     fork: "Prompt vs fine-tune",
     pivot: "Can a few examples fix it?",
-    rule: "Try few-shot prompting first — it's free and instant. Fine-tune only when the behavior won't stick across prompts or you need it baked in at scale.",
+    rule: "Try few-shot prompting first, it's free and instant. Fine-tune only when the behavior won't stick across prompts or you need it baked in at scale.",
   },
   {
     fork: "API vs self-host",
-    pivot: "Is volume high & steady — or is the data strict?",
+    pivot: "Is volume high & steady, or is the data strict?",
     rule: "Low/spiky volume or no MLOps → hosted API. High steady volume with MLOps, or strict data residency → self-host. Start on API, revisit at the break-even.",
   },
   {

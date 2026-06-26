@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Btn } from "../../components/ui.jsx";
 
 /*
- * Prompt patterns — pick Zero-shot / Few-shot / Chain-of-thought / Structured
+ * Prompt patterns, pick Zero-shot / Few-shot / Chain-of-thought / Structured
  * output and two side-by-side panels update: the prompt template that pattern
  * produces and a representative model output (both baked per pattern), plus a
  * one-line "use when / cost" note.
@@ -18,7 +18,7 @@ const PATTERNS = [
 Review: "The battery dies in an hour."
 Sentiment:`,
     output: `negative`,
-    note: "Use when the task is simple and well-known. Cheapest — no examples, fewest tokens.",
+    note: "Use when the task is simple and well-known. Cheapest, no examples, fewest tokens.",
   },
   {
     id: "few",
@@ -40,7 +40,7 @@ Let's think step by step.`,
 Each group costs $2.
 4 × $2 = $8.
 Answer: $8`,
-    note: "Use for multi-step reasoning / math. More tokens, slower — but big accuracy gains.",
+    note: "Use for multi-step reasoning / math. More tokens, slower, but big accuracy gains.",
   },
   {
     id: "structured",
@@ -68,7 +68,7 @@ Let's think step by step.`,
 sample 2 → $8
 sample 3 → $6   ✗
 majority vote → $8`,
-    note: "Use for hard reasoning where one sample is unreliable. Costs N× — you pay for every sample.",
+    note: "Use for hard reasoning where one sample is unreliable. Costs N×, you pay for every sample.",
   },
 ];
 
@@ -121,7 +121,7 @@ export default function PromptPatternsViz() {
       </div>
 
       <div className="font-mono text-[11px] text-ink-faint leading-relaxed">
-        <span style={{ color: ACCENT }}>{p.label}</span> — {p.note}
+        <span style={{ color: ACCENT }}>{p.label}</span>, {p.note}
       </div>
     </div>
   );

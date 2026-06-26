@@ -1,13 +1,13 @@
 import React, { useMemo, useState } from "react";
 
 /*
- * 2D embedding-space explorer — baked fixture, no model in the browser.
+ * 2D embedding-space explorer, baked fixture, no model in the browser.
  * 16 words placed in 4 visible clusters (≥4 each) on a 0–100 plane.
  * Click a word to make it the query: we draw faint lines to its 3 nearest
- * neighbors by STRAIGHT-LINE (Euclidean) distance — the honest metric for a
- * position scatter — and show a closeness score. Closeness ≈ semantic similarity.
+ * neighbors by STRAIGHT-LINE (Euclidean) distance, the honest metric for a
+ * position scatter, and show a closeness score. Closeness ≈ semantic similarity.
  * (Real high-dim embeddings rank by cosine; on a 2-D map distance is what the eye
- *  reads, and the two agree once vectors are length-normalized — see the topic text.)
+ *  reads, and the two agree once vectors are length-normalized, see the topic text.)
  */
 const ACCENT = "#7c5cff";
 
@@ -68,7 +68,7 @@ export default function EmbeddingsViz() {
   return (
     <div className="rounded-xl border border-line bg-surface p-4 md:p-5">
       <div className="text-sm text-ink-dim mb-3">
-        Click any word to make it the <span className="text-ink font-semibold">query</span> — lines
+        Click any word to make it the <span className="text-ink font-semibold">query</span>, lines
         connect it to its <span className="text-ink font-semibold">3 nearest neighbors</span> on the
         map. Words that mean similar things sit near each other.
       </div>
@@ -159,7 +159,7 @@ export default function EmbeddingsViz() {
           ))}
         </div>
         <div className="font-mono text-[11px] text-ink-faint mt-3">
-          closeness = semantic similarity — the 3 nearest all share the query's cluster.
+          closeness = semantic similarity, the 3 nearest all share the query's cluster.
         </div>
       </div>
     </div>

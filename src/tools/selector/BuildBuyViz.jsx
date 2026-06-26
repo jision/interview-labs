@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
 /*
- * Build vs buy — API (closed) vs self-host (open model) decider.
+ * Build vs buy, API (closed) vs self-host (open model) decider.
  * Live recommendation from volume, data sensitivity, latency need, and
  * whether the team has MLOps capacity. Pure decision logic; the volume
  * break-even is a baked rough threshold.
@@ -36,23 +36,23 @@ function decide({ volume, strict, latency, mlops }) {
 
   // No MLOps → API, regardless of volume.
   if (!mlops) {
-    reasons.push("No MLOps capacity — owning GPUs, scaling, and upgrades isn't realistic yet");
+    reasons.push("No MLOps capacity, owning GPUs, scaling, and upgrades isn't realistic yet");
     reasons.push("Hosted API ships now with zero ops burden");
     if (volume >= BREAK_EVEN)
-      reasons.push("Volume is past break-even — revisit self-host once you can staff the ops");
+      reasons.push("Volume is past break-even, revisit self-host once you can staff the ops");
     return { rec: "api", reasons };
   }
 
-  // Have MLOps, standard data — pivot on volume and latency.
+  // Have MLOps, standard data, pivot on volume and latency.
   if (volume >= BREAK_EVEN) {
-    reasons.push("High, steady volume past the break-even — amortized GPUs beat per-token API spend");
+    reasons.push("High, steady volume past the break-even, amortized GPUs beat per-token API spend");
     reasons.push("You have the MLOps capacity to keep the fleet busy");
     if (latency === "tight")
       reasons.push("Self-host also lets you co-locate and shave network round-trips for the tight SLO");
     return { rec: "self", reasons };
   }
 
-  reasons.push("Volume is below the self-host break-even — fixed GPU cost wouldn't pay off");
+  reasons.push("Volume is below the self-host break-even, fixed GPU cost wouldn't pay off");
   reasons.push("Hosted API keeps cost variable and avoids idle-GPU loss");
   if (latency === "tight")
     reasons.push("Watch p95 from the network hop; cache and stream to hold the tight SLO");

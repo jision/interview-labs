@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Btn } from "../../components/ui.jsx";
 
 /*
- * Full fine-tune vs LoRA — a stacked transformer-layer diagram. In Full mode all
+ * Full fine-tune vs LoRA, a stacked transformer-layer diagram. In Full mode all
  * weights are trainable (highlighted). In LoRA mode the base is frozen (dimmed)
  * with small adapter blocks highlighted. Trainable-params % and a rough VRAM/cost
  * comparison update with the toggle.
@@ -16,7 +16,7 @@ const MODES = {
     trainablePct: "100%",
     vram: "~8× the FP16 size",
     cost: "$$$$",
-    note: "Every weight needs gradients + Adam optimizer states (~16 bytes/param vs 2 for inference) — huge VRAM, one frozen artifact per task.",
+    note: "Every weight needs gradients + Adam optimizer states (~16 bytes/param vs 2 for inference), huge VRAM, one frozen artifact per task.",
   },
   lora: {
     trainablePct: "<1%",
@@ -122,7 +122,7 @@ export default function FineTuneViz() {
 
       <div className="mt-4 font-mono text-[11px] text-ink-faint leading-relaxed">
         LoRA trains &lt;1% of the parameters by injecting low-rank matrices into the model's linear
-        layers (attention projections, often the MLP too) — same quality for most narrow tasks at a
+        layers (attention projections, often the MLP too), same quality for most narrow tasks at a
         fraction of the VRAM and cost. QLoRA goes further, training adapters on a 4-bit base.
       </div>
     </div>

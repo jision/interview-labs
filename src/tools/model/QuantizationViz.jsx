@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Btn } from "../../components/ui.jsx";
 
 /*
- * Quantization trade-off — pick a precision (FP16/INT8/INT4) and a model preset
+ * Quantization trade-off, pick a precision (FP16/INT8/INT4) and a model preset
  * (7B/13B/70B). Bars update for memory (params × bytes/param), relative quality
  * (small drop per step down), and relative latency/throughput.
  * Rule of thumb baked in: 7B ≈ 14GB FP16, ≈ 3.5GB INT4 (before KV cache).
@@ -120,8 +120,8 @@ export default function QuantizationViz() {
           <span style={{ color: ACCENT }}>{stats.vramGb.toFixed(1)} GB</span> of weights
           {precId !== "FP16" && (
             <>
-              {" "}
-              — that's <span style={{ color: ACCENT }}>{(prec.bytes / 2).toFixed(2)}×</span> the FP16
+              , that's{" "}
+              <span style={{ color: ACCENT }}>{(prec.bytes / 2).toFixed(2)}×</span> the FP16
               footprint.
             </>
           )}
@@ -129,7 +129,7 @@ export default function QuantizationViz() {
       </div>
 
       <div className="font-mono text-[11px] text-ink-faint leading-relaxed">
-        Rule of thumb: 7B ≈ 14GB at FP16, ≈ 3.5GB at INT4 — before the KV cache, which grows with
+        Rule of thumb: 7B ≈ 14GB at FP16, ≈ 3.5GB at INT4, before the KV cache, which grows with
         context length and batch size. Each step down roughly halves memory for a small quality hit.
       </div>
     </div>

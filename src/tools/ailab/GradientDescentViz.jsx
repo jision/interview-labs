@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Btn } from "../../components/ui.jsx";
 
 /*
- * 1-D gradient descent — animated, no model in the browser.
+ * 1-D gradient descent, animated, no model in the browser.
  * Loss surface: f(x) = (x - c)^2 + a small sine bump so it's not a clean parabola.
  * step:  x -= lr * f'(x)
  * run:   animate steps via setInterval until near the min or it diverges.
@@ -58,7 +58,7 @@ export default function GradientDescentViz() {
     const next = cur - lrRef.current * df(cur);
     setSteps((s) => s + 1);
     // diverging: the step overshot and flew off the chart (lr too big), or went non-finite.
-    // (We deliberately do NOT flag "loss still high" — a healthy step downhill can start above
+    // (We deliberately do NOT flag "loss still high", a healthy step downhill can start above
     // the plot clamp; only an out-of-range or exploding x is true divergence.)
     if (!Number.isFinite(next) || next < X_MIN - 4 || next > X_MAX + 4) {
       setDiverged(true);
@@ -110,7 +110,7 @@ export default function GradientDescentViz() {
     <div className="rounded-xl border border-line bg-surface p-4 md:p-5">
       <div className="text-sm text-ink-dim mb-3">
         The ball rolls downhill: <code className="font-mono text-ink">x −= lr · f′(x)</code>. Nudge
-        the learning rate and watch it converge — or, if it's too big,{" "}
+        the learning rate and watch it converge, or, if it's too big,{" "}
         <span className="text-ink font-semibold">overshoot and diverge</span>.
       </div>
 
@@ -196,7 +196,7 @@ export default function GradientDescentViz() {
             color: "#f87171",
           }}
         >
-          ⚠ diverging — the step jumped past the minimum. Lower the learning rate.
+          ⚠ diverging, the step jumped past the minimum. Lower the learning rate.
         </div>
       )}
     </div>

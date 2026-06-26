@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 
 /*
- * Cost / Latency / Quality — the "pick two" trade-off the architect round loves.
+ * Cost / Latency / Quality, the "pick two" trade-off the architect round loves.
  * Select exactly two to optimize; the third is what gives. Baked guidance for all
- * three pairings — no computation, just the decision a senior engineer would name.
+ * three pairings, no computation, just the decision a senior engineer would name.
  */
 const ACCENT = "#fb6f3c";
 
@@ -24,7 +24,7 @@ const GUIDANCE = {
     levers: [
       "Use a smaller / distilled model (e.g. 7B instead of 70B).",
       "Aggressive quantization (INT8/INT4) for cheaper, faster inference.",
-      "Skip the reranker and extra context — fewer tokens, less latency.",
+      "Skip the reranker and extra context, fewer tokens, less latency.",
       "Cache common answers; route easy queries to the cheapest model.",
     ],
   },
@@ -35,10 +35,10 @@ const GUIDANCE = {
     summary:
       "A big, accurate model on cheap hardware means you wait. Batch hard and accept slower, queued responses.",
     levers: [
-      "Continuous batching — high throughput, but each request waits its turn.",
+      "Continuous batching, high throughput, but each request waits its turn.",
       "Run the large model on fewer / cheaper (non-over-provisioned) GPUs.",
       "Use async / offline jobs where users don't need instant replies.",
-      "Add multi-step reasoning or a critic pass — better answers, more time.",
+      "Add multi-step reasoning or a critic pass, better answers, more time.",
     ],
   },
   // picked: Latency + Quality  →  Cost gives
@@ -50,8 +50,8 @@ const GUIDANCE = {
     levers: [
       "Over-provision GPUs so there's always spare capacity for low latency.",
       "Run the largest model you can afford for top-tier quality.",
-      "Speculative decoding + dedicated replicas — fast and accurate, not cheap.",
-      "Keep context rich (more retrieval, reranking) — more tokens, more spend.",
+      "Speculative decoding + dedicated replicas, fast and accurate, not cheap.",
+      "Keep context rich (more retrieval, reranking), more tokens, more spend.",
     ],
   },
 };
@@ -75,7 +75,7 @@ export default function TradeoffTriangleViz() {
   return (
     <div className="rounded-xl border border-line bg-surface p-4 md:p-5">
       <div className="font-mono text-[11px] text-ink-dim mb-2">
-        pick two to optimize — the third gives
+        pick two to optimize, the third gives
       </div>
       <div className="flex flex-wrap gap-2 mb-4">
         {VERTICES.map((v) => {

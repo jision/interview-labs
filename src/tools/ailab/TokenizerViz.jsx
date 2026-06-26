@@ -2,18 +2,18 @@ import React, { useMemo, useState } from "react";
 import { Callout } from "../../components/ui.jsx";
 
 /*
- * Live tokenizer — deterministic APPROXIMATION, not real BPE.
+ * Live tokenizer, deterministic APPROXIMATION, not real BPE.
  * No vocab/model in the browser. The rules below just *mimic* how a sub-word
  * tokenizer behaves so the counts and chips feel right:
  *   1) split text into whitespace / word / punctuation runs (whitespace kept)
  *   2) common short words stay whole (one token)
  *   3) long/rare words get sliced into ~3–4 char sub-pieces
- * Real BPE merges frequent byte pairs from a fixed vocabulary — this is a
+ * Real BPE merges frequent byte pairs from a fixed vocabulary, this is a
  * teaching stand-in tuned to the ~4-chars-≈-1-token rule of thumb.
  */
 const ACCENT = "#7c5cff";
 
-const DEFAULT_TEXT = "Tokenization isn't magic — it's sub-words!";
+const DEFAULT_TEXT = "Tokenization isn't magic, it's sub-words!";
 
 // A small "stays whole" list of common short words (kept as single tokens).
 const COMMON = new Set([
@@ -22,7 +22,7 @@ const COMMON = new Set([
   "this", "that", "i", "you", "we", "they", "he", "she", "do", "did", "has",
 ]);
 
-// Chip palette — cycle through a few accent-friendly hues per token.
+// Chip palette, cycle through a few accent-friendly hues per token.
 const CHIP = ["#7c5cff", "#60a5fa", "#4ade80", "#fbbf24", "#f87171", "#22d3ee"];
 
 // Slice a long word into ~5/4 char sub-pieces (mimics sub-word fragmentation).
@@ -43,7 +43,7 @@ function tokenize(text) {
   const runs = text.match(/[A-Za-z0-9]+|\s+|[^\sA-Za-z0-9]/g) || [];
   const tokens = [];
   // Real BPE encodes a leading space WITH the following word (" magic" is one token),
-  // so we don't emit whitespace as its own token — we hang it onto the next unit.
+  // so we don't emit whitespace as its own token, we hang it onto the next unit.
   let lead = "";
   for (const run of runs) {
     if (/^\s+$/.test(run)) {
@@ -56,7 +56,7 @@ function tokenize(text) {
       continue;
     }
     const lower = run.toLowerCase();
-    // most words (≤7 chars) or known common words stay whole — one token
+    // most words (≤7 chars) or known common words stay whole, one token
     if (run.length <= 7 || COMMON.has(lower)) {
       tokens.push(lead + run);
     } else {
@@ -88,7 +88,7 @@ export default function TokenizerViz() {
   return (
     <div className="rounded-xl border border-line bg-surface p-4 md:p-5">
       <div className="text-sm text-ink-dim mb-3">
-        Type below — each <span className="text-ink font-semibold">chip is one token</span>. Long or
+        Type below, each <span className="text-ink font-semibold">chip is one token</span>. Long or
         rare words fragment into sub-word pieces; common words stay whole; and a leading space rides
         on the next word (the <span className="font-mono text-ink">·</span> shows it), just like real BPE.
       </div>
@@ -105,7 +105,7 @@ export default function TokenizerViz() {
       {/* token chips */}
       <div className="rounded-lg border border-line bg-surface-2 p-3 mb-4 min-h-[3rem]">
         {tokenCount === 0 ? (
-          <span className="font-mono text-[11px] text-ink-faint">— empty —</span>
+          <span className="font-mono text-[11px] text-ink-faint">(empty)</span>
         ) : (
           <div className="flex flex-wrap gap-1">
             {tokens.map((t, i) => {
@@ -157,7 +157,7 @@ export default function TokenizerViz() {
       <Callout kind="note" title="Rule of thumb">
         Roughly <strong>~4 characters ≈ 1 token</strong> for English prose. Numbers, code, and
         whitespace tokenize <em>less</em> efficiently (more tokens per character), so they cost more
-        and eat context faster. This widget is a deterministic approximation — real BPE merges
+        and eat context faster. This widget is a deterministic approximation, real BPE merges
         frequent byte pairs from a fixed vocabulary.
       </Callout>
     </div>

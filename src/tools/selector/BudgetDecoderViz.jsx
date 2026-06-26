@@ -2,11 +2,11 @@ import React, { useState } from "react";
 import { Btn } from "../../components/ui.jsx";
 
 /*
- * Budget decoder — the signature Selector widget.
+ * Budget decoder, the signature Selector widget.
  * Take cost / latency / quality constraints and score a baked menu of
  * architectures against them. Marks each feasible / tight / infeasible
  * with a one-line reason, then sorts feasible-first.
- * Pure decision logic — no network, no model, baked rough numbers.
+ * Pure decision logic, no network, no model, baked rough numbers.
  */
 const ACCENT = "#ffb703";
 
@@ -241,7 +241,7 @@ export default function BudgetDecoderViz() {
       </div>
 
       <p className="text-[13px] text-ink-faint leading-relaxed mt-4">
-        Numbers are rough order-of-magnitude anchors, not quotes — the point is the reasoning: every
+        Numbers are rough order-of-magnitude anchors, not quotes, the point is the reasoning: every
         constraint you tighten knocks options off the menu.
       </p>
     </div>

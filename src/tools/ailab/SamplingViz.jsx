@@ -2,12 +2,12 @@ import React, { useMemo, useState } from "react";
 import { Btn } from "../../components/ui.jsx";
 
 /*
- * Decoding playground — baked next-token logits, live temperature / top-k / top-p.
+ * Decoding playground, baked next-token logits, live temperature / top-k / top-p.
  * Teaches why the same prompt gives different answers, and what each knob does.
  */
 const ACCENT = "#7c5cff";
 
-// "The weather today is ___" — hand-authored logits.
+// "The weather today is ___", hand-authored logits.
 const BASE = [
   { tok: "sunny", logit: 2.6 },
   { tok: "cloudy", logit: 1.9 },

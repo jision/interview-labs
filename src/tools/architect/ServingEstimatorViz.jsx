@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 
 /*
- * LLM serving-capacity estimator — the "will it fit, and how many at once?" math
+ * LLM serving-capacity estimator, the "will it fit, and how many at once?" math
  * the serving round always wants. All inputs editable; shows max concurrent
- * requests and a stacked GPU-memory budget bar. No real hardware probing —
+ * requests and a stacked GPU-memory budget bar. No real hardware probing,
  * everything below is a back-of-envelope rule of thumb (commented inline).
  */
 const ACCENT = "#fb6f3c";
 
-/* bytes per parameter by precision — the standard quantization ladder */
+/* bytes per parameter by precision, the standard quantization ladder */
 const PRECISIONS = [
   { id: "fp16", label: "FP16", bytes: 2 },
   { id: "int8", label: "INT8", bytes: 1 },
@@ -24,7 +24,7 @@ const GPU_PRESETS = [24, 40, 80, 141];
  * ~0.2 MB/token ⇒ ~200 MB per 1k tokens. (A dense-attention model with no
  * grouped-query KV sharing would be several× larger, ~0.8 MB/token.) Scales
  * linearly with context length. We keep the KV cache at FP16 regardless of the
- * *weight* precision — in real serving (vLLM/AWQ) KV precision is set
+ * *weight* precision, in real serving (vLLM/AWQ) KV precision is set
  * independently, so INT4 weights do NOT automatically shrink the KV cache.
  */
 const KV_MB_PER_1K_TOKENS = 200;
@@ -61,7 +61,7 @@ export default function ServingEstimatorViz() {
   const prec = PRECISIONS.find((p) => p.id === precId) || PRECISIONS[0];
 
   // weights memory (GB) = params(B) × bytes/param.  params are in billions, and
-  // 1e9 bytes ≈ 1 GB here (decimal GB — fine for an envelope), so it cancels out.
+  // 1e9 bytes ≈ 1 GB here (decimal GB, fine for an envelope), so it cancels out.
   const weightsGB = params * prec.bytes;
 
   // KV cache per concurrent request (GB): the per-1k-token rule × context length.
@@ -162,7 +162,7 @@ export default function ServingEstimatorViz() {
         <div className="mt-3 pt-3 border-t border-line font-mono text-[11px] text-ink-dim leading-relaxed">
           {!fits ? (
             <span style={{ color: "#f87171" }}>
-              ⚠ model doesn't fit: weights ({weightsGB.toFixed(1)}GB) + overhead exceed {vram}GB VRAM —
+              ⚠ model doesn't fit: weights ({weightsGB.toFixed(1)}GB) + overhead exceed {vram}GB VRAM,
               quantize (try INT8/INT4) or shard across GPUs.
             </span>
           ) : (

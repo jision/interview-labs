@@ -53,7 +53,7 @@ QUERY  (online):   q → embed → ANN search top-k → [rerank] → prompt → 
         </p>
         <Callout kind="tip" title="Always cite & ground">
           Instruct the model to answer only from context and return source IDs. It makes hallucination
-          visible and gives users something to click — table stakes for enterprise.
+          visible and gives users something to click, table stakes for enterprise.
         </Callout>
         <Callout kind="trap" title="Chunking is where RAG lives or dies">
           Too-big chunks dilute the embedding and waste context; too-small chunks lose the surrounding
@@ -71,7 +71,7 @@ QUERY  (online):   q → embed → ANN search top-k → [rerank] → prompt → 
           the question with the <em>same</em> model, search the index, assemble context, and generate.
         </p>
         <Callout kind="trap" title="The embedding model must match on both paths">
-          Query and documents have to be embedded by the same model into the same space — mix two models
+          Query and documents have to be embedded by the same model into the same space, mix two models
           and cosine similarity is meaningless. Re-embedding the whole corpus is the real cost of
           switching embedding models later, so choose deliberately up front.
         </Callout>
@@ -79,7 +79,7 @@ QUERY  (online):   q → embed → ANN search top-k → [rerank] → prompt → 
 
       <Block eyebrow="chunking" title="Why chunking dominates quality">
         <p className="text-ink-dim leading-relaxed mb-2">
-          A <strong>chunk</strong> is the unit you embed and retrieve — so it's also the unit of meaning
+          A <strong>chunk</strong> is the unit you embed and retrieve, so it's also the unit of meaning
           the model sees. Get it wrong and nothing downstream can recover. The usual strategies, in rough
           order of sophistication:
         </p>
@@ -94,7 +94,7 @@ QUERY  (online):   q → embed → ANN search top-k → [rerank] → prompt → 
         />
         <Callout kind="note" title="Why it dominates">
           Retrieval can only return chunks that exist. If the answer spans two chunks, or a chunk mixes
-          three unrelated facts, no embedding model or reranker can fix that — the information was lost at
+          three unrelated facts, no embedding model or reranker can fix that, the information was lost at
           ingest. This is why chunking is the lever people tune first.
         </Callout>
       </Block>
@@ -102,7 +102,7 @@ QUERY  (online):   q → embed → ANN search top-k → [rerank] → prompt → 
       <Block eyebrow="the index" title="Vector DB + approximate nearest neighbors">
         <p className="text-ink-dim leading-relaxed mb-2">
           Comparing a query against millions of vectors one-by-one (exact / brute-force search) is
-          O(n) per query — too slow at scale. A <strong>vector database</strong> instead builds an{" "}
+          O(n) per query, too slow at scale. A <strong>vector database</strong> instead builds an{" "}
           <strong>approximate-nearest-neighbor (ANN)</strong> index that trades a tiny bit of recall for
           <em> sub-linear</em> search. The two families you should be able to name:
         </p>
@@ -114,7 +114,7 @@ QUERY  (online):   q → embed → ANN search top-k → [rerank] → prompt → 
           ]}
         />
         <Callout kind="tip" title="Hybrid retrieval beats either alone">
-          Dense (vector) search captures meaning but misses exact tokens — product codes, names, rare
+          Dense (vector) search captures meaning but misses exact tokens, product codes, names, rare
           jargon. <strong>Keyword search</strong> (BM25 / sparse) nails those but misses paraphrase. Run
           both and fuse the rankings (e.g. reciprocal rank fusion); this <strong>hybrid</strong> retrieval
           is the production default.
@@ -123,7 +123,7 @@ QUERY  (online):   q → embed → ANN search top-k → [rerank] → prompt → 
 
       <Block eyebrow="precision" title="Reranking and context assembly">
         <p className="text-ink-dim leading-relaxed mb-2">
-          ANN search optimizes <strong>recall</strong> — get the right chunk somewhere in the top-k. A{" "}
+          ANN search optimizes <strong>recall</strong>, get the right chunk somewhere in the top-k. A{" "}
           <strong>cross-encoder reranker</strong> then optimizes <strong>precision</strong>: it reads the
           query and each candidate chunk <em>together</em> and scores true relevance, reordering the top-k
           so the best few land at the top. It's slower per pair (no precomputed vectors), so you only run
@@ -140,7 +140,7 @@ QUERY  (online):   q → embed → ANN search top-k → [rerank] → prompt → 
       <Block eyebrow="when & how good" title="Failure modes, the alternatives, and eval">
         <p className="text-ink-dim leading-relaxed mb-2">
           Common production failures: a <strong>stale index</strong> (docs changed, vectors didn't),{" "}
-          <strong>missing access control</strong> (retrieval returns chunks a user shouldn't see — apply
+          <strong>missing access control</strong> (retrieval returns chunks a user shouldn't see, apply
           permission filters <em>during</em> search, not after), and the lost-in-the-middle effect above.
         </p>
         <OpTable
@@ -152,7 +152,7 @@ QUERY  (online):   q → embed → ANN search top-k → [rerank] → prompt → 
           ]}
         />
         <Callout kind="tip" title="The interview answer">
-          “RAG has two paths: an offline ingest path — load, clean, chunk, embed, index — and an online
+          “RAG has two paths: an offline ingest path, load, clean, chunk, embed, index, and an online
           query path that embeds the question, does hybrid ANN search, reranks for precision, and feeds
           cited chunks to the model. I'd evaluate <strong>retrieval</strong> with recall@k and{" "}
           <strong>generation</strong> with faithfulness/groundedness, because most ‘the LLM is wrong’ bugs
@@ -191,8 +191,8 @@ function Agents() {
           specialized roles (planner, researcher, critic) with an orchestrator.
         </p>
         <Callout kind="trap" title="The three agent failure modes">
-          (1) <strong>Loops</strong> — always cap steps and budget. (2) <strong>Tool errors</strong> —
-          feed failures back as observations so it can recover. (3) <strong>Cost blowup</strong> — each
+          (1) <strong>Loops</strong>, always cap steps and budget. (2) <strong>Tool errors</strong>,
+          feed failures back as observations so it can recover. (3) <strong>Cost blowup</strong>, each
           step is a full LLM call; a 10-step agent is 10× the latency and tokens.
         </Callout>
         <Callout kind="tip" title="Architect instinct">
@@ -205,8 +205,8 @@ function Agents() {
         <p className="text-ink-dim leading-relaxed mb-2">
           The model can't run code or hit an API itself. <strong>Function (tool) calling</strong> is a
           contract: you give the model a <strong>typed schema</strong> for each tool (name, description,
-          JSON parameters), the model <em>emits a structured call</em> — “call <code className="font-mono">search</code>{" "}
-          with <code className="font-mono">{`{query: "..."}`}</code>” — and <strong>your runtime</strong>{" "}
+          JSON parameters), the model <em>emits a structured call</em>, “call <code className="font-mono">search</code>{" "}
+          with <code className="font-mono">{`{query: "..."}`}</code>”, and <strong>your runtime</strong>{" "}
           executes it and feeds the result back into the context. The model decides <em>which</em> tool
           and <em>with what arguments</em>; you decide what actually happens.
         </p>
@@ -223,7 +223,7 @@ function Agents() {
 // your runtime runs it, returns  {"temp_c": 22}  as the observation`}
         />
         <Callout kind="warn" title="A tool call is untrusted output">
-          Validate arguments before executing — clamp ranges, check permissions, never pass them straight
+          Validate arguments before executing, clamp ranges, check permissions, never pass them straight
           into a shell or SQL string. The model proposes; your code disposes. (This is the same security
           boundary as prompt injection.)
         </Callout>
@@ -235,20 +235,20 @@ function Agents() {
           out steps up front (or decompose the goal) instead of improvising one action at a time.{" "}
           <strong>Memory</strong>: short-term is the running history in context; long-term is an external
           store (often a vector DB) it can write to and retrieve from across steps or sessions.{" "}
-          <strong>Reflection</strong>: let the agent critique its own output — “does this actually answer
-          the question?” — and retry. A separate <em>critic</em> step catches errors the actor misses.
+          <strong>Reflection</strong>: let the agent critique its own output, “does this actually answer
+          the question?”, and retry. A separate <em>critic</em> step catches errors the actor misses.
         </p>
         <Callout kind="note" title="Multi-agent orchestration">
           When one prompt juggles too many roles, split them: an <strong>orchestrator</strong> decomposes
           the task and delegates to specialized <strong>workers</strong> (researcher, coder, critic), then
-          synthesizes. It buys clearer prompts and parallelism — at the cost of more calls, more latency,
+          synthesizes. It buys clearer prompts and parallelism, at the cost of more calls, more latency,
           and coordination bugs. Reach for it only when a single agent visibly struggles.
         </Callout>
       </Block>
 
       <Block eyebrow="control" title="Keeping agents from going off the rails">
         <p className="text-ink-dim leading-relaxed mb-2">
-          Agents fail in characteristic ways, and each has a standard mitigation — interviewers want to
+          Agents fail in characteristic ways, and each has a standard mitigation, interviewers want to
           hear that you build the guardrails <em>in</em>, not bolt them on after.
         </p>
         <OpTable
@@ -260,9 +260,9 @@ function Agents() {
           ]}
         />
         <Callout kind="tip" title="The interview answer">
-          “An agent is an LLM in a ReAct loop — reason, act via a typed tool call, observe the result,
+          “An agent is an LLM in a ReAct loop, reason, act via a typed tool call, observe the result,
           repeat. Tools are typed schemas the model fills in and my runtime executes. I always add step
-          caps, a budget, and error-feedback so it can't loop or cascade — and I'd ask first whether a
+          caps, a budget, and error-feedback so it can't loop or cascade, and I'd ask first whether a
           fixed pipeline could do the job, because an agent costs one full LLM call per step.”
         </Callout>
       </Block>
@@ -276,8 +276,8 @@ function FineTune() {
     <>
       <Lede>
         Fine-tuning changes the model's <em>weights</em> to bake in behavior, format, or style that
-        prompting can't reliably get. For most teams that means <strong>LoRA</strong> — train a tiny
-        set of adapter weights, freeze the rest — not a full-parameter retrain.
+        prompting can't reliably get. For most teams that means <strong>LoRA</strong>, train a tiny
+        set of adapter weights, freeze the rest, not a full-parameter retrain.
       </Lede>
 
       <Try label="full vs LoRA"><FineTuneViz /></Try>
@@ -300,7 +300,7 @@ function FineTune() {
         </p>
         <Callout kind="tip" title="The decision rule">
           Fine-tune for <em>behavior</em> (how it responds), RAG for <em>knowledge</em> (what it knows).
-          They compose — a fine-tuned model over a RAG pipeline is common.
+          They compose, a fine-tuned model over a RAG pipeline is common.
         </Callout>
         <Callout kind="trap" title="Fine-tuning is a maintenance commitment">
           Every base-model upgrade means re-tuning and re-evaluating. RAG data updates instantly; a
@@ -310,8 +310,8 @@ function FineTune() {
 
       <Block eyebrow="what actually changes" title="Weights (fine-tune) vs context (RAG)">
         <p className="text-ink-dim leading-relaxed mb-2">
-          The crisp distinction: <strong>fine-tuning edits the model's weights</strong> — the learned
-          parameters — so the new behavior is baked in and costs nothing extra at inference.{" "}
+          The crisp distinction: <strong>fine-tuning edits the model's weights</strong>, the learned
+          parameters, so the new behavior is baked in and costs nothing extra at inference.{" "}
           <strong>RAG</strong> leaves the weights untouched and instead changes <em>what you put in the
           context</em> at query time. That's why the rule of thumb is behavior → fine-tune, knowledge →
           RAG: weights are good at <em>how</em> to respond, context is good at <em>what</em> is currently
@@ -319,15 +319,15 @@ function FineTune() {
         </p>
         <Callout kind="note" title="Full vs PEFT, in one line">
           <strong>Full fine-tune</strong> updates every weight (huge memory, a fresh copy of the model).{" "}
-          <strong>PEFT</strong> (parameter-efficient fine-tuning) freezes the base and trains a small add-on
-          — LoRA is the most common PEFT method, and <strong>QLoRA</strong> is LoRA on a 4-bit-quantized
+          <strong>PEFT</strong> (parameter-efficient fine-tuning) freezes the base and trains a small add-on,
+          LoRA is the most common PEFT method, and <strong>QLoRA</strong> is LoRA on a 4-bit-quantized
           base so it fits on a single consumer GPU.
         </Callout>
       </Block>
 
       <Block eyebrow="two kinds of tuning" title="SFT (teach the task) vs preference tuning (teach taste)">
         <p className="text-ink-dim leading-relaxed mb-2">
-          <strong>SFT — supervised / instruction tuning</strong> — shows the model input→output pairs of
+          <strong>SFT, supervised / instruction tuning</strong>, shows the model input→output pairs of
           the behavior you want; it learns to imitate. That gets you a model that <em>does the task</em>,
           but not necessarily in the tone or with the judgment you'd prefer. <strong>Preference tuning</strong>{" "}
           then teaches <em>which of two answers is better</em> using human (or AI) comparisons:
@@ -335,13 +335,13 @@ function FineTune() {
         <OpTable
           cols={["Stage", "Data", "", "What it does"]}
           rows={[
-            { op: "SFT", avg: "input→output pairs", avgTone: "good", why: "Imitate demonstrated answers. The workhorse — most teams stop here." },
+            { op: "SFT", avg: "input→output pairs", avgTone: "good", why: "Imitate demonstrated answers. The workhorse, most teams stop here." },
             { op: "RLHF", avg: "ranked answers + reward model", avgTone: "ok", why: "Train a reward model on preferences, then RL the model to maximize it. Powerful, complex, unstable." },
             { op: "DPO", avg: "chosen vs rejected pairs", avgTone: "good", why: "Optimizes the same preference signal directly, no separate reward model or RL loop. Simpler, popular." },
           ]}
         />
         <Callout kind="note" title="Data: quality over quantity">
-          LoRA/SFT can move behavior with hundreds to a few thousand <em>clean, consistent</em> examples —
+          LoRA/SFT can move behavior with hundreds to a few thousand <em>clean, consistent</em> examples,
           a small set of high-quality demonstrations beats a large noisy one. The labels <em>are</em> the
           product; garbage examples teach garbage confidently.
         </Callout>
@@ -351,19 +351,19 @@ function FineTune() {
         <p className="text-ink-dim leading-relaxed mb-2">
           <strong>Catastrophic forgetting</strong> is the central risk: push too hard on a narrow dataset
           (too many epochs, too high a learning rate) and the model overfits your data and loses general
-          ability. The guardrails are the same as classic overfitting — small learning rate, few epochs,
-          early stopping — and PEFT helps because the frozen base preserves most of what it knew.
+          ability. The guardrails are the same as classic overfitting, small learning rate, few epochs,
+          early stopping, and PEFT helps because the frozen base preserves most of what it knew.
         </p>
         <Callout kind="tip" title="Hot-swapping adapters">
           A LoRA adapter is tiny (megabytes), so you can serve <strong>one base model</strong> and swap in
-          a different adapter per customer or task at request time — a big serving-cost win versus hosting
+          a different adapter per customer or task at request time, a big serving-cost win versus hosting
           a full fine-tuned copy of the model for each.
         </Callout>
         <Callout kind="tip" title="The interview answer">
-          “Fine-tuning changes weights, RAG changes context — so I fine-tune for <em>behavior</em> and
+          “Fine-tuning changes weights, RAG changes context, so I fine-tune for <em>behavior</em> and
           format, and use RAG for <em>knowledge</em>. In practice that's LoRA (PEFT), not a full retrain:
           SFT to teach the task, optionally DPO to align to preferences. I watch for catastrophic
-          forgetting, and the two compose — a fine-tuned model over a RAG pipeline is common.”
+          forgetting, and the two compose, a fine-tuned model over a RAG pipeline is common.”
         </Callout>
       </Block>
     </>
@@ -375,7 +375,7 @@ function Prompt() {
   return (
     <>
       <Lede>
-        Prompting is the cheapest, fastest lever — and a real engineering surface, not vibes. A handful
+        Prompting is the cheapest, fastest lever, and a real engineering surface, not vibes. A handful
         of patterns cover most production needs.
       </Lede>
 
@@ -385,7 +385,7 @@ function Prompt() {
         <OpTable
           cols={["Pattern", "What it does", "", "Use when"]}
           rows={[
-            { op: "Zero-shot", avg: "just ask", avgTone: "good", why: "Simple, well-known tasks. No examples — cheapest, fewest tokens." },
+            { op: "Zero-shot", avg: "just ask", avgTone: "good", why: "Simple, well-known tasks. No examples, cheapest, fewest tokens." },
             { op: "Few-shot", avg: "show examples", avgTone: "good", why: "Format/edge cases are hard to describe but easy to demonstrate." },
             { op: "Chain-of-thought", avg: "‘think step by step’", avgTone: "good", why: "Multi-step reasoning, math, logic. Costs more tokens." },
             { op: "Structured output", avg: "force JSON/schema", avgTone: "good", why: "Anything downstream code must parse. Use schema/tool mode." },
@@ -398,14 +398,14 @@ function Prompt() {
         </Callout>
         <Callout kind="warn" title="Prompt injection is a security boundary">
           Anything retrieved or user-supplied can contain instructions. Never let model output trigger
-          privileged actions without validation — treat the prompt like untrusted input.
+          privileged actions without validation, treat the prompt like untrusted input.
         </Callout>
       </Block>
 
       <Block eyebrow="the three roles" title="System, user, assistant">
         <p className="text-ink-dim leading-relaxed mb-2">
           A chat prompt is a list of messages with <strong>roles</strong>. The <strong>system</strong>{" "}
-          message sets persistent rules, persona, and constraints — it's the highest-priority instruction.
+          message sets persistent rules, persona, and constraints, it's the highest-priority instruction.
           The <strong>user</strong> message is the request. The <strong>assistant</strong> message is the
           model's reply, and prior assistant turns become part of the context for the next one.
         </p>
@@ -427,14 +427,14 @@ assistant: "SELECT * FROM users WHERE created_at >= ..."`}
         <p className="text-ink-dim leading-relaxed mb-2">
           A model produces each token from the ones before it, so it has no scratchpad unless you give it
           one. <strong>Chain-of-thought</strong> (“think step by step”) makes the model write the
-          intermediate steps <em>as tokens</em>, and those tokens then condition the final answer — it's
+          intermediate steps <em>as tokens</em>, and those tokens then condition the final answer, it's
           literally giving the model room to compute. That's why CoT helps most on multi-step math and
           logic and barely helps on lookups.
         </p>
         <Callout kind="tip" title="Self-consistency: sample, then vote">
           For hard reasoning, sample several CoT answers at a non-zero temperature and take the{" "}
           <strong>majority answer</strong>. Different reasoning paths that converge on the same result are
-          more trustworthy than one shot — at N× the cost, so reserve it for genuinely hard problems.
+          more trustworthy than one shot, at N× the cost, so reserve it for genuinely hard problems.
         </Callout>
         <Callout kind="note" title="Hide the scratchpad, keep the answer">
           When you use CoT in production, ask for the reasoning in a field you can strip (or use a model's
@@ -455,7 +455,7 @@ assistant: "SELECT * FROM users WHERE created_at >= ..."`}
  cheapest                                                                          most expensive`}
         />
         <Callout kind="tip" title="The interview answer">
-          “There are three roles — system for durable rules, user for the request, assistant for replies.
+          “There are three roles, system for durable rules, user for the request, assistant for replies.
           I climb an escalation ladder: zero-shot, then few-shot for tricky formats, structured output for
           anything code must parse, chain-of-thought for multi-step reasoning, self-consistency when one
           sample is unreliable. I stop at the cheapest rung that's good enough, and I treat every retrieved
@@ -472,7 +472,7 @@ function Evals() {
     <>
       <Lede>
         “How do you know it works?” is the question that separates a demo from a product. Evaluation is
-        the hardest and most under-built part of LLM systems — and the part architects are expected to
+        the hardest and most under-built part of LLM systems, and the part architects are expected to
         have an opinion on.
       </Lede>
 
@@ -483,10 +483,10 @@ function Evals() {
           cols={["Method", "Good for", "", "Watch out"]}
           rows={[
             { op: "Golden set", avg: "regression", avgTone: "good", why: "Curated Q→expected pairs; run on every change. Build this first." },
-            { op: "Exact / rule match", avg: "extraction, classify", avgTone: "good", why: "Cheap and objective — when there's one right answer." },
+            { op: "Exact / rule match", avg: "extraction, classify", avgTone: "good", why: "Cheap and objective, when there's one right answer." },
             { op: "LLM-as-judge", avg: "open-ended quality", avgTone: "ok", why: "Scales, but biased & noisy; calibrate against human labels." },
             { op: "Human review", avg: "ground truth", avgTone: "ok", why: "Gold standard, doesn't scale; sample it, don't skip it." },
-            { op: "Online (A/B, feedback)", avg: "real impact", avgTone: "ok", why: "Thumbs, edits, task success — the only metric that truly counts." },
+            { op: "Online (A/B, feedback)", avg: "real impact", avgTone: "ok", why: "Thumbs, edits, task success, the only metric that truly counts." },
           ]}
         />
         <Callout kind="tip" title="The architect framing">
@@ -501,15 +501,15 @@ function Evals() {
 
       <Block eyebrow="why it's hard" title="The golden set is the foundation">
         <p className="text-ink-dim leading-relaxed mb-2">
-          Eval is the hard part because LLM outputs are open-ended — there's rarely one right string, so
+          Eval is the hard part because LLM outputs are open-ended, there's rarely one right string, so
           you can't just diff against an expected answer the way you would in a unit test. The fix is a{" "}
           <strong>golden set</strong> (also called a regression set): a curated, version-controlled
           collection of representative inputs with known-good outputs. You run it on <em>every</em> change
-          so you catch regressions before users do. Build this first — it's the single highest-leverage
+          so you catch regressions before users do. Build this first, it's the single highest-leverage
           eval artifact.
         </p>
         <Callout kind="note" title="Match the metric to the task">
-          When there's a single correct answer — classification, extraction, structured fields — use{" "}
+          When there's a single correct answer, classification, extraction, structured fields, use{" "}
           <strong>exact match</strong> or rule-based checks: cheap, objective, no model needed. Save the
           fuzzy, expensive methods for genuinely open-ended outputs.
         </Callout>
@@ -517,7 +517,7 @@ function Evals() {
 
       <Block eyebrow="LLM-as-judge" title="Scales, but it's biased">
         <p className="text-ink-dim leading-relaxed mb-2">
-          For open-ended quality you can have a strong model <strong>grade</strong> outputs — cheap and
+          For open-ended quality you can have a strong model <strong>grade</strong> outputs, cheap and
           scalable, but it carries known biases you must control for. Naming them is what separates a
           junior answer from a senior one:
         </p>
@@ -531,7 +531,7 @@ function Evals() {
         />
         <Callout kind="tip" title="Calibrate the judge">
           A judge is only trustworthy once you've shown it agrees with a <strong>human-labeled sample</strong>.
-          Measure that agreement, then trust the judge to scale — and re-check it periodically. An
+          Measure that agreement, then trust the judge to scale, and re-check it periodically. An
           uncalibrated judge is a confident number with no ground truth behind it.
         </Callout>
       </Block>
@@ -539,7 +539,7 @@ function Evals() {
       <Block eyebrow="online & RAG-specific" title="Real impact and grounding metrics">
         <p className="text-ink-dim leading-relaxed mb-2">
           Offline eval predicts; <strong>online eval</strong> measures. An <strong>A/B test</strong> with{" "}
-          <strong>implicit feedback</strong> — thumbs, edits, copy/accept rate, task success, retention —
+          <strong>implicit feedback</strong>, thumbs, edits, copy/accept rate, task success, retention,
           is the only signal that reflects real value. For RAG specifically you decompose quality so you
           know <em>which stage</em> to fix:
         </p>
@@ -553,14 +553,14 @@ function Evals() {
         />
         <Callout kind="tip" title="The interview answer">
           “Eval is the hard part because outputs are open-ended. I build a golden regression set first and
-          gate every deploy on it; exact-match where there's one answer, LLM-as-judge — calibrated to a
-          human sample and de-biased for position and verbosity — for open-ended quality; and online A/B
+          gate every deploy on it; exact-match where there's one answer, LLM-as-judge, calibrated to a
+          human sample and de-biased for position and verbosity, for open-ended quality; and online A/B
           with implicit feedback as the real measure. For RAG I split faithfulness, answer relevance, and
           context precision so I know which stage failed.”
         </Callout>
         <Callout kind="note" title="The data flywheel">
           Online feedback and human corrections feed straight back into the golden set and fine-tuning
-          data. Each release makes the next eval sharper and the next model better — the flywheel that
+          data. Each release makes the next eval sharper and the next model better, the flywheel that
           compounds over time.
         </Callout>
       </Block>
@@ -573,7 +573,7 @@ function AdvRag() {
   return (
     <>
       <Lede>
-        The naive RAG loop — embed the question, pull top-k, stuff the prompt — gets you a demo. When
+        The naive RAG loop, embed the question, pull top-k, stuff the prompt, gets you a demo. When
         recall is poor, questions are multi-hop, or answers come back unfaithful, you reach for a
         toolkit of upgrades on the same two paths from the <strong>RAG</strong> topic: transform the
         query, retrieve better, and sometimes retrieve <em>in a loop</em>.
@@ -588,8 +588,8 @@ function AdvRag() {
           cols={["Technique", "What it does", "", "Why it helps"]}
           rows={[
             { op: "Rewrite / expand", avg: "clean the query", avgTone: "good", why: "Resolve pronouns, add synonyms, split a compound question. Especially fixes follow-ups in a chat where 'it' has no meaning to a fresh search." },
-            { op: "HyDE", avg: "embed a fake answer", avgTone: "good", why: "Have the LLM hallucinate an ideal answer, then embed THAT and retrieve with it — answers look more like documents than questions do, so the vector lands closer to real passages." },
-            { op: "Multi-query", avg: "fan out rephrasings", avgTone: "ok", why: "Generate several phrasings, retrieve for each, union the results. Catches relevant chunks any single phrasing would have missed — at N× retrieval cost." },
+            { op: "HyDE", avg: "embed a fake answer", avgTone: "good", why: "Have the LLM hallucinate an ideal answer, then embed THAT and retrieve with it, answers look more like documents than questions do, so the vector lands closer to real passages." },
+            { op: "Multi-query", avg: "fan out rephrasings", avgTone: "ok", why: "Generate several phrasings, retrieve for each, union the results. Catches relevant chunks any single phrasing would have missed, at N× retrieval cost." },
           ]}
         />
         <Callout kind="note" title="Why HyDE works">
@@ -605,11 +605,11 @@ function AdvRag() {
           <strong>BM25</strong> (keyword) retrieval and fuse the two ranked lists with{" "}
           <strong>reciprocal rank fusion</strong>, then run a <strong>cross-encoder reranker</strong> over
           the merged top-k for precision. Advanced RAG mostly stacks the query and graph tricks below{" "}
-          <em>on top of</em> this hybrid-plus-rerank base — it's the foundation, not an alternative.
+          <em>on top of</em> this hybrid-plus-rerank base, it's the foundation, not an alternative.
         </p>
         <Callout kind="tip" title="RRF in one line">
           Reciprocal rank fusion scores each chunk by 1/(k + rank) summed across the dense and sparse
-          lists — no tuning of relative weights, just 'agreed-on-by-both ranks high.' A robust default for
+          lists, no tuning of relative weights, just 'agreed-on-by-both ranks high.' A robust default for
           merging retrievers.
         </Callout>
       </Block>
@@ -629,7 +629,7 @@ function AdvRag() {
         />
         <Callout kind="note" title="Where agentic RAG meets the Agents topic">
           'Retrieve, read, decide, retrieve again' is just the <strong>Agents</strong> ReAct loop with
-          search as the tool. It costs one LLM call per hop, so cap the steps — but it's how you answer
+          search as the tool. It costs one LLM call per hop, so cap the steps, but it's how you answer
           questions a single retrieval can't.
         </Callout>
       </Block>
@@ -638,7 +638,7 @@ function AdvRag() {
         <p className="text-ink-dim leading-relaxed mb-2">
           A known high-leverage pattern: leave the generator general and <strong>fine-tune the embedding
           model</strong> on domain query–document pairs. The retriever learns what 'relevant' means in{" "}
-          <em>your</em> corpus (your jargon, your product names), which lifts recall across every query —
+          <em>your</em> corpus (your jargon, your product names), which lifts recall across every query,
           and an embedding model is far smaller and cheaper to tune than the generator. You capture much of
           fine-tuning's benefit at a fraction of the cost.
         </p>
@@ -651,7 +651,7 @@ function AdvRag() {
 
       <Block eyebrow="prove it works" title="Evaluating RAG, RAGAS-style">
         <p className="text-ink-dim leading-relaxed mb-2">
-          You can't tune any of this blind. Decompose RAG quality so you know <em>which stage</em> to fix —
+          You can't tune any of this blind. Decompose RAG quality so you know <em>which stage</em> to fix,
           the RAGAS-style metrics, which split retrieval from generation:
         </p>
         <OpTable
@@ -659,22 +659,22 @@ function AdvRag() {
           rows={[
             { op: "Faithfulness", avg: "generation", avgTone: "good", why: "Is every claim in the answer grounded in the retrieved context? The core hallucination check." },
             { op: "Answer relevance", avg: "generation", avgTone: "good", why: "Does the answer actually address the question, vs. true-but-off-topic padding?" },
-            { op: "Context precision", avg: "retrieval", avgTone: "good", why: "Of the chunks we retrieved, how many are actually relevant — and ranked high?" },
+            { op: "Context precision", avg: "retrieval", avgTone: "good", why: "Of the chunks we retrieved, how many are actually relevant, and ranked high?" },
             { op: "Context recall", avg: "retrieval", avgTone: "good", why: "Did we retrieve all the chunks needed to answer? Low recall caps everything downstream." },
           ]}
         />
         <Callout kind="trap" title="Optimize the right stage">
           A low <em>faithfulness</em> score is a generation problem (the model is ignoring or
           embellishing the context); low <em>context recall</em> is a retrieval problem (the answer wasn't
-          there to ground on). Splitting the metric tells you which knob to turn — don't reach for a better
+          there to ground on). Splitting the metric tells you which knob to turn, don't reach for a better
           generator when retrieval is what failed.
         </Callout>
         <Callout kind="tip" title="The interview answer">
           “When naive top-k stalls, I work the query and the retriever before the generator: rewrite or
           HyDE the query, fan out multi-query, retrieve hybrid dense+BM25 with RRF, then cross-encoder
           rerank. For multi-hop or global questions I reach for GraphRAG or agentic retrieval-in-a-loop,
-          and fine-tuning the <em>embedding</em> model is a cheap recall win. I evaluate RAGAS-style —
-          faithfulness and answer relevance for generation, context precision/recall for retrieval — so I
+          and fine-tuning the <em>embedding</em> model is a cheap recall win. I evaluate RAGAS-style,
+          faithfulness and answer relevance for generation, context precision/recall for retrieval, so I
           know which stage to fix.”
         </Callout>
       </Block>
@@ -687,7 +687,7 @@ function ToolMcp() {
   return (
     <>
       <Lede>
-        The <strong>Agents</strong> topic covered the loop; this is the layer underneath it — how a model
+        The <strong>Agents</strong> topic covered the loop; this is the layer underneath it, how a model
         actually 'uses' a tool, and how the industry is standardizing the wiring between models and the
         world. The 2026 headline is <strong>MCP</strong>: an open protocol that turns the N×M integration
         mess into one plug.
@@ -696,7 +696,7 @@ function ToolMcp() {
       <Block eyebrow="the mechanics, deeper" title="How a tool call really works">
         <p className="text-ink-dim leading-relaxed mb-2">
           Recapping from <strong>Agents</strong>: tools are exposed as <strong>typed JSON schemas</strong>{" "}
-          (name, description, parameters). The model can't run anything — it <em>emits a structured call</em>,
+          (name, description, parameters). The model can't run anything, it <em>emits a structured call</em>,
           your runtime executes it, and the result re-enters the context as an observation. Two details
           that come up in interviews: models can request <strong>parallel calls</strong> in one turn (fan
           out independent lookups), and reliability lives in the runtime, not the model.
@@ -704,14 +704,14 @@ function ToolMcp() {
         <OpTable
           cols={["Concern", "The failure", "", "What you do"]}
           rows={[
-            { op: "Bad arguments", avg: "wrong / malformed call", avgTone: "bad", why: "Validate against the schema before executing — clamp ranges, check types, reject the call and ask again if it's off." },
+            { op: "Bad arguments", avg: "wrong / malformed call", avgTone: "bad", why: "Validate against the schema before executing, clamp ranges, check types, reject the call and ask again if it's off." },
             { op: "Tool errors", avg: "the call throws", avgTone: "ok", why: "Catch it and feed the error back as an observation so the model can adapt, instead of crashing the loop." },
-            { op: "Non-idempotent actions", avg: "double-charge, double-send", avgTone: "bad", why: "Guard writes/payments — confirmation steps, idempotency keys, dry-run. A retried tool call must not act twice." },
+            { op: "Non-idempotent actions", avg: "double-charge, double-send", avgTone: "bad", why: "Guard writes/payments, confirmation steps, idempotency keys, dry-run. A retried tool call must not act twice." },
           ]}
         />
         <Callout kind="warn" title="A tool call is untrusted output">
           The same boundary as prompt injection: a model-proposed call is untrusted. Never let it trigger a
-          privileged action — delete data, move money, change permissions — without independent checks. The
+          privileged action, delete data, move money, change permissions, without independent checks. The
           model proposes; your code, with its own authorization, disposes.
         </Callout>
       </Block>
@@ -720,7 +720,7 @@ function ToolMcp() {
         <p className="text-ink-dim leading-relaxed mb-2">
           Before any standard, every app wired tools and data sources to models its own way: each of{" "}
           <strong>N</strong> applications hand-rolled an integration for each of <strong>M</strong> data
-          sources and tools. That's <strong>N×M</strong> bespoke connectors — a combinatorial mess where a
+          sources and tools. That's <strong>N×M</strong> bespoke connectors, a combinatorial mess where a
           new database means re-implementing it in every app, and a new app means re-wiring every source.
         </p>
         <CodeBlock
@@ -735,28 +735,28 @@ function ToolMcp() {
         />
       </Block>
 
-      <Block eyebrow="the standard" title="MCP — 'USB-C for AI tools'">
+      <Block eyebrow="the standard" title="MCP, 'USB-C for AI tools'">
         <p className="text-ink-dim leading-relaxed mb-2">
           The <strong>Model Context Protocol (MCP)</strong> is an open standard that collapses N×M into
-          N+M. An MCP <strong>server</strong> exposes its capabilities — <strong>tools</strong> (actions to
+          N+M. An MCP <strong>server</strong> exposes its capabilities, <strong>tools</strong> (actions to
           call), <strong>resources</strong> (data to read), and <strong>prompts</strong> (reusable
-          templates) — and any MCP-compatible <strong>client</strong> (an IDE, an agent, a chat app) can
+          templates), and any MCP-compatible <strong>client</strong> (an IDE, an agent, a chat app) can
           connect to it. Build the server once and every client can use it; build the client once and it
           speaks to every server. That's the 'USB-C for AI tools' analogy: one connector, many devices.
         </p>
         <OpTable
           cols={["MCP primitive", "Is", "", "Example"]}
           rows={[
-            { op: "Tools", avg: "actions", avgTone: "good", why: "Functions the model can call — same typed-schema idea as tool calling, now served over a standard protocol." },
-            { op: "Resources", avg: "readable data", avgTone: "good", why: "Files, rows, documents the client can pull into context — the data side of the connection." },
+            { op: "Tools", avg: "actions", avgTone: "good", why: "Functions the model can call, same typed-schema idea as tool calling, now served over a standard protocol." },
+            { op: "Resources", avg: "readable data", avgTone: "good", why: "Files, rows, documents the client can pull into context, the data side of the connection." },
             { op: "Prompts", avg: "templates", avgTone: "ok", why: "Reusable, parameterized prompt snippets a server offers to clients for common workflows." },
           ]}
         />
         <Callout kind="note" title="Where it sits vs the Agents topic">
-          The <strong>Agents</strong> loop is the brain — reason, act, observe. MCP is the{" "}
+          The <strong>Agents</strong> loop is the brain, reason, act, observe. MCP is the{" "}
           <strong>integration layer that loop calls into</strong>: when the agent decides to act, an MCP
           client invokes a tool on an MCP server. It standardizes the agent↔tool/data plumbing so agents
-          become <em>pluggable</em> — point one at a new MCP server and it gains those capabilities with no
+          become <em>pluggable</em>, point one at a new MCP server and it gains those capabilities with no
           bespoke glue. A major 2026 trend for exactly that reason.
         </Callout>
         <Callout kind="warn" title="The security boundary doesn't move">
@@ -766,9 +766,9 @@ function ToolMcp() {
         </Callout>
         <Callout kind="tip" title="The interview answer">
           “A tool call is a contract: the model emits a structured call against a typed JSON schema, my
-          runtime validates the arguments and executes it, and the result re-enters context — I treat that
+          runtime validates the arguments and executes it, and the result re-enters context, I treat that
           call as untrusted and guard non-idempotent actions. The integration problem is N×M bespoke
-          connectors, and <strong>MCP</strong> — an open client/server standard, 'USB-C for AI tools' —
+          connectors, and <strong>MCP</strong>, an open client/server standard, 'USB-C for AI tools',
           fixes it: a server exposes tools, resources, and prompts, and any compatible client connects. It's
           the pluggable tool/data layer the agent loop calls into.”
         </Callout>
@@ -782,8 +782,8 @@ function Compress() {
   return (
     <>
       <Lede>
-        Quantization and distillation trade a little quality for big wins in cost, latency, and memory
-        — the levers that make self-hosting viable.
+        Quantization and distillation trade a little quality for big wins in cost, latency, and memory,
+        the levers that make self-hosting viable.
       </Lede>
 
       <Try label="quantization trade-off"><QuantizationViz /></Try>
@@ -791,7 +791,7 @@ function Compress() {
       <Block eyebrow="two techniques" title="Smaller weights, or a smaller student">
         <p className="text-ink-dim leading-relaxed mb-2">
           <strong>Quantization</strong> stores weights at lower precision (FP16 → INT8 → INT4). It
-          roughly halves memory per step down with modest quality loss — a 4-bit 70B model fits where
+          roughly halves memory per step down with modest quality loss, a 4-bit 70B model fits where
           the full model never would. <strong>Distillation</strong> trains a small “student” to mimic a
           large “teacher”, giving a permanently cheaper model for a fixed task.
         </p>
@@ -804,7 +804,7 @@ function Compress() {
           ]}
         />
         <Callout kind="note" title="Rule of thumb for VRAM">
-          Weights ≈ params × bytes/param. A 7B model ≈ 14GB at FP16, ≈ 3.5GB at INT4 — before the KV
+          Weights ≈ params × bytes/param. A 7B model ≈ 14GB at FP16, ≈ 3.5GB at INT4, before the KV
           cache, which grows with context length and batch size.
         </Callout>
       </Block>
@@ -816,12 +816,12 @@ function Compress() {
           bytes</strong> per parameter. Going down the ladder roughly halves memory and bandwidth at each
           step, and since LLM serving is largely memory-bandwidth-bound, smaller weights are also{" "}
           <em>faster</em>. The cost is precision: each weight can represent fewer distinct values, so
-          quality erodes — gently at INT8, more noticeably at INT4.
+          quality erodes, gently at INT8, more noticeably at INT4.
         </p>
         <Callout kind="note" title="Two ways to quantize">
           <strong>Post-training quantization (PTQ)</strong> takes a finished model and rounds its weights
-          down — fast, no retraining, the common path. <strong>Quantization-aware training (QAT)</strong>{" "}
-          simulates the rounding <em>during</em> training so the model learns to tolerate it — more work,
+          down, fast, no retraining, the common path. <strong>Quantization-aware training (QAT)</strong>{" "}
+          simulates the rounding <em>during</em> training so the model learns to tolerate it, more work,
           better low-bit quality. Most teams start with PTQ.
         </Callout>
       </Block>
@@ -838,7 +838,7 @@ function Compress() {
         <Callout kind="trap" title="The KV-cache caveat">
           Quantizing <strong>weights</strong> shrinks the model on disk, but at long context the{" "}
           <strong>KV cache</strong> (the stored keys/values for every prior token) can dominate memory and
-          it isn't touched by weight quantization. Budget for it separately — or quantize the KV cache too.
+          it isn't touched by weight quantization. Budget for it separately, or quantize the KV cache too.
         </Callout>
       </Block>
 
@@ -847,7 +847,7 @@ function Compress() {
           <strong>Distillation</strong> is a different axis: instead of shrinking weights, you train a
           small <em>student</em> to mimic a large <em>teacher</em>. Crucially the student learns from the
           teacher's full output distribution (its <strong>logits</strong> / soft probabilities), not just
-          the final label — those “soft targets” carry far more information than a one-hot answer, which is
+          the final label, those “soft targets” carry far more information than a one-hot answer, which is
           why a distilled student can punch above its size on the teacher's task.
         </p>
         <OpTable
@@ -860,12 +860,12 @@ function Compress() {
         />
         <Callout kind="tip" title="Speculative decoding (a freebie)">
           A small <em>draft</em> model proposes several tokens, the big model verifies them in one pass and
-          keeps the prefix that matches. Same output distribution, fewer big-model steps — pure latency win,
+          keeps the prefix that matches. Same output distribution, fewer big-model steps, pure latency win,
           no quality loss, no retraining.
         </Callout>
         <Callout kind="tip" title="The interview answer">
-          “Quantization stores weights in fewer bits — the precision ladder is FP16 at 2 bytes, INT8 at 1,
-          INT4 at half — using methods like GPTQ or AWQ to keep quality at 4-bit. Distillation is the other
+          “Quantization stores weights in fewer bits, the precision ladder is FP16 at 2 bytes, INT8 at 1,
+          INT4 at half, using methods like GPTQ or AWQ to keep quality at 4-bit. Distillation is the other
           lever: a small student mimics a big teacher's logits. I'd remember the KV cache isn't covered by
           weight quantization, and reach for speculative decoding when I just want lower latency for free.”
         </Callout>
@@ -880,7 +880,7 @@ function Classic() {
     <>
       <Lede>
         Not everything is an LLM. For tabular data, structured prediction, and latency-critical
-        scoring, classic ML is faster, cheaper, and more interpretable — and it still shows up in
+        scoring, classic ML is faster, cheaper, and more interpretable, and it still shows up in
         screens. Here's enough to actually <em>reach for the right one</em>.
       </Lede>
 
@@ -890,7 +890,7 @@ function Classic() {
           rows={[
             { op: "Linear / Logistic", avg: "baselines", avgTone: "good", why: "Fit a weighted sum; logistic squashes it to a probability. Always start here." },
             { op: "Decision tree", avg: "rules", avgTone: "ok", why: "Greedy splits on the most informative feature; interpretable, overfits alone." },
-            { op: "Random forest", avg: "robust tabular", avgTone: "good", why: "Many de-correlated trees, averaged — variance drops, little tuning." },
+            { op: "Random forest", avg: "robust tabular", avgTone: "good", why: "Many de-correlated trees, averaged, variance drops, little tuning." },
             { op: "Gradient boosting", avg: "tabular winner", avgTone: "good", why: "Trees that each fix the prior's errors. XGBoost/LightGBM win most tabular tasks." },
             { op: "k-NN", avg: "lazy similarity", avgTone: "ok", why: "Predict from nearest neighbors; no training, slow at query time." },
             { op: "k-means", avg: "clustering", avgTone: "ok", why: "Unsupervised grouping into k centroids; pick k, mind scaling." },
@@ -899,7 +899,7 @@ function Classic() {
         <Callout kind="tip" title="The default that wins">
           On structured/tabular data, <strong>gradient-boosted trees</strong> (XGBoost, LightGBM) beat
           deep nets the vast majority of the time, with less data and less tuning. Deep learning earns
-          its keep on unstructured data — text, images, audio.
+          its keep on unstructured data, text, images, audio.
         </Callout>
         <Callout kind="note" title="Metrics decide the model, not just accuracy">
           On imbalanced data, accuracy lies (99% “not fraud” by predicting never). Reach for
@@ -910,8 +910,8 @@ function Classic() {
       <Block eyebrow="the first split" title="Supervised vs unsupervised">
         <p className="text-ink-dim leading-relaxed mb-2">
           The top-level divide: <strong>supervised</strong> learning has labeled examples (input → known
-          answer) and learns to predict the label — that's classification and regression.{" "}
-          <strong>Unsupervised</strong> learning has no labels and finds structure on its own —{" "}
+          answer) and learns to predict the label, that's classification and regression.{" "}
+          <strong>Unsupervised</strong> learning has no labels and finds structure on its own,{" "}
           clustering (k-means), dimensionality reduction (PCA), anomaly detection. Most production ML is
           supervised; unsupervised often shows up as a preprocessing or exploration step.
         </p>
@@ -919,7 +919,7 @@ function Classic() {
           Despite the name, logistic regression is a <strong>classifier</strong>. It fits a weighted sum
           like linear regression, then passes it through a <strong>sigmoid</strong> to squash the result
           into a <strong>probability</strong> in [0, 1]; you threshold that (usually at 0.5) to get a
-          class. So its output is a calibrated-ish probability, not a raw score — which is why it's a
+          class. So its output is a calibrated-ish probability, not a raw score, which is why it's a
           great, interpretable baseline.
         </Callout>
       </Block>
@@ -927,7 +927,7 @@ function Classic() {
       <Block eyebrow="why trees win tabular" title="Trees → forests → boosting">
         <p className="text-ink-dim leading-relaxed mb-2">
           A single <strong>decision tree</strong> splits the data greedily on the most informative
-          feature — interpretable, but it overfits badly alone. The two ways to fix that define the most
+          feature, interpretable, but it overfits badly alone. The two ways to fix that define the most
           important family in tabular ML:
         </p>
         <OpTable
@@ -950,7 +950,7 @@ function Classic() {
           cols={["Model", "Idea", "", "Reach for it when"]}
           rows={[
             { op: "SVM", avg: "max-margin boundary", avgTone: "ok", why: "Find the separating line with the widest gap; kernels handle non-linear. Small/medium clean datasets." },
-            { op: "k-NN", avg: "ask the neighbors", avgTone: "ok", why: "No training — predict from the k closest points at query time. Simple baseline; slow and memory-heavy at scale." },
+            { op: "k-NN", avg: "ask the neighbors", avgTone: "ok", why: "No training, predict from the k closest points at query time. Simple baseline; slow and memory-heavy at scale." },
             { op: "k-means", avg: "k centroids", avgTone: "ok", why: "Unsupervised grouping into k clusters. Pick k, scale features first; the clustering default." },
             { op: "Naive Bayes", avg: "feature independence", avgTone: "ok", why: "Probabilistic, assumes features are independent. Fast, strong on text/spam despite the naive assumption." },
           ]}
@@ -958,7 +958,7 @@ function Classic() {
         <Callout kind="note" title="Feature engineering is the real work">
           On tabular data the model often matters less than the <strong>features</strong>: encoding
           categoricals, scaling, handling missing values, and crafting informative combinations. Good
-          features in a simple model beat raw columns in a fancy one — and avoid <em>leakage</em>
+          features in a simple model beat raw columns in a fancy one, and avoid <em>leakage</em>
           (sneaking the answer into a feature), the classic silent killer of tabular pipelines.
         </Callout>
       </Block>
@@ -968,14 +968,14 @@ function Classic() {
           Deep nets shine on <em>unstructured</em> data (text, images, audio) where they learn features
           from raw signal. On <strong>tabular</strong> data the features are already meaningful columns,
           datasets are smaller, and gradient-boosted trees handle mixed types and interactions with little
-          tuning — so they keep winning. It all ties back to <strong>bias–variance</strong>: forests
+          tuning, so they keep winning. It all ties back to <strong>bias–variance</strong>: forests
           attack variance, boosting attacks bias, regularization buys a little bias to kill variance.
         </p>
         <Callout kind="tip" title="The interview answer">
-          “I split supervised vs unsupervised, then start with a linear/logistic baseline — logistic
+          “I split supervised vs unsupervised, then start with a linear/logistic baseline, logistic
           outputs a probability via a sigmoid. For tabular I go to gradient-boosted trees (XGBoost,
           LightGBM): boosting reduces bias, bagging reduces variance, and they beat deep nets on structured
-          data most of the time. Then I pick the metric for the cost structure — precision/recall/AUC, not
+          data most of the time. Then I pick the metric for the cost structure, precision/recall/AUC, not
           raw accuracy on imbalanced data.”
         </Callout>
       </Block>
@@ -1004,25 +1004,25 @@ function RecSys() {
         <p className="text-ink-dim leading-relaxed mt-2">
           <strong>Collaborative filtering</strong> uses “users like you liked X”;{" "}
           <strong>content-based</strong> uses item features; the modern default is a{" "}
-          <strong>two-tower</strong> model — separate user and item encoders trained so a dot product
+          <strong>two-tower</strong> model, separate user and item encoders trained so a dot product
           approximates relevance, enabling fast ANN retrieval.
         </p>
         <Callout kind="trap" title="The cold-start problem">
           New users and new items have no interaction history. Fall back to content features,
-          popularity, or onboarding signals — interviewers will always probe this.
+          popularity, or onboarding signals, interviewers will always probe this.
         </Callout>
       </Block>
 
       <Block eyebrow="the signal" title="Explicit vs implicit feedback">
         <p className="text-ink-dim leading-relaxed mb-2">
-          What you train on matters as much as the model. <strong>Explicit feedback</strong> — star
-          ratings, thumbs — is clean but rare and biased (people rate the extremes). <strong>Implicit
-          feedback</strong> — clicks, watch time, purchases, dwell — is abundant but noisy and{" "}
+          What you train on matters as much as the model. <strong>Explicit feedback</strong>, star
+          ratings, thumbs, is clean but rare and biased (people rate the extremes). <strong>Implicit
+          feedback</strong>, clicks, watch time, purchases, dwell, is abundant but noisy and{" "}
           <em>one-sided</em>: a non-click might mean “disliked” or just “never saw it.” Most real systems
           run on implicit signals and have to model that missing-not-at-random problem carefully.
         </p>
         <Callout kind="note" title="Absence isn't a negative">
-          You can't treat every un-clicked item as a dislike — the user only saw a sliver of the catalog.
+          You can't treat every un-clicked item as a dislike, the user only saw a sliver of the catalog.
           Techniques like negative sampling (treat a <em>random</em> unseen item as a soft negative) exist
           precisely to handle this.
         </Callout>
@@ -1032,19 +1032,19 @@ function RecSys() {
         <p className="text-ink-dim leading-relaxed mb-2">
           <strong>Collaborative filtering</strong> recommends from interaction patterns alone, no item
           features needed. <strong>User–user</strong> CF: “people similar to you liked X.”{" "}
-          <strong>Item–item</strong> CF: “people who liked this item also liked X” — more stable, since
+          <strong>Item–item</strong> CF: “people who liked this item also liked X”, more stable, since
           items change slower than tastes, and what powers most “related items” rails.
         </p>
         <p className="text-ink-dim leading-relaxed mb-2">
           <strong>Matrix factorization</strong> is the workhorse formalization: the huge, sparse
-          user×item interaction matrix is approximated as the product of two skinny matrices — a{" "}
+          user×item interaction matrix is approximated as the product of two skinny matrices, a{" "}
           <strong>latent vector</strong> per user and per item. A user's predicted affinity for an item is
           just the <strong>dot product</strong> of their vectors. <strong>Content-based</strong>{" "}
           filtering instead uses item features directly, which is its key advantage at cold-start.
         </p>
         <Callout kind="note" title="Latent factors are learned, not labeled">
-          MF discovers dimensions on its own — one might end up encoding “action vs. drama,” another
-          “mainstream vs. niche” — without anyone defining them. It's embeddings for recommendation.
+          MF discovers dimensions on its own, one might end up encoding “action vs. drama,” another
+          “mainstream vs. niche”, without anyone defining them. It's embeddings for recommendation.
         </Callout>
       </Block>
 
@@ -1054,7 +1054,7 @@ function RecSys() {
           encoder for the user (and context), a separate one for the item, trained so that{" "}
           <strong>dot product ≈ relevance</strong>. The payoff is serving: because the towers are
           independent, you precompute every item vector offline and index them for{" "}
-          <strong>ANN</strong> search — at request time you embed only the user and pull the nearest items
+          <strong>ANN</strong> search, at request time you embed only the user and pull the nearest items
           in milliseconds, out of millions.
         </p>
         <OpTable
@@ -1067,7 +1067,7 @@ function RecSys() {
         />
         <Callout kind="note" title="Why split recall and precision">
           A precise model is too expensive to run on millions of items, and a cheap model is too blunt to
-          order the final list well. The funnel lets each stage specialize — cheap recall narrows the
+          order the final list well. The funnel lets each stage specialize, cheap recall narrows the
           field, expensive precision sorts what's left.
         </Callout>
       </Block>
@@ -1077,18 +1077,18 @@ function RecSys() {
           Recommendation eval is about <em>ranking</em>, not single-answer accuracy. <strong>Recall@k</strong>{" "}
           asks whether the relevant items made the top k at all (the candidate-gen metric).{" "}
           <strong>nDCG</strong> rewards putting the <em>most</em> relevant items <em>highest</em>, with a
-          discount that fades down the list — the ranking metric, since position is what users actually
+          discount that fades down the list, the ranking metric, since position is what users actually
           see.
         </p>
         <Callout kind="trap" title="Feedback loops and filter bubbles">
-          The model is trained on what it previously showed, so it reinforces its own past choices —{" "}
+          The model is trained on what it previously showed, so it reinforces its own past choices,{" "}
           <strong>filter bubbles</strong> narrow what users ever see, and the training data drifts toward
           the model's biases. Inject exploration (show some novel/diverse items), log{" "}
           <em>impressions</em> not just clicks, and watch diversity metrics, not just engagement.
         </Callout>
         <Callout kind="tip" title="The interview answer">
-          “Recommendation is a two-stage funnel: cheap candidate generation — usually a two-tower model
-          with ANN retrieval — then an expensive ranker, then re-ranking for diversity and freshness. It
+          “Recommendation is a two-stage funnel: cheap candidate generation, usually a two-tower model
+          with ANN retrieval, then an expensive ranker, then re-ranking for diversity and freshness. It
           runs mostly on implicit feedback, so I'm careful that a non-click isn't a true negative. I'd
           evaluate with Recall@k for retrieval and nDCG for ranking, plan for cold-start with content
           features, and guard against feedback loops with exploration.”
@@ -1118,7 +1118,7 @@ export default function ModelBench() {
       accent={ACCENT}
       eyebrow="Approaches · the HOW"
       title="Model Bench"
-      subtitle="The recurring solution shapes — RAG, agents, fine-tuning, evals — plus the classic ML families that still win on tabular data."
+      subtitle="The recurring solution shapes, RAG, agents, fine-tuning, evals, plus the classic ML families that still win on tabular data."
       topics={TOPICS}
       activeId={active}
       onSelect={setActive}

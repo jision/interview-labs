@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
 /*
- * LLM cost estimator — the "back-of-envelope" the architect round always wants.
+ * LLM cost estimator, the "back-of-envelope" the architect round always wants.
  * All inputs editable; shows monthly cost and the dominant driver. No live pricing.
  */
 const ACCENT = "#fb6f3c";
@@ -83,7 +83,7 @@ export default function CostEstimatorViz() {
 
         <div className="mt-3 pt-3 border-t border-line font-mono text-[11px] text-ink-dim leading-relaxed">
           {(reqPerMonth / 1_000_000).toFixed(1)}M requests/mo · dominant driver:{" "}
-          <span className="text-ink">{inShare > 60 ? "input/context tokens — trim the prompt & RAG context" : outShareNote(inShare)}</span>
+          <span className="text-ink">{inShare > 60 ? "input/context tokens, trim the prompt & RAG context" : outShareNote(inShare)}</span>
         </div>
       </div>
     </div>
@@ -91,6 +91,6 @@ export default function CostEstimatorViz() {
 }
 
 function outShareNote(inShare) {
-  if (inShare < 40) return "output tokens — shorten responses or cap max_tokens";
-  return "balanced — both input and output matter";
+  if (inShare < 40) return "output tokens, shorten responses or cap max_tokens";
+  return "balanced, both input and output matter";
 }

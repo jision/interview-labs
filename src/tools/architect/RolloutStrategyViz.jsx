@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import { Btn } from "../../components/ui.jsx";
 
 /*
- * Rollout-strategy selector — pick shadow / canary / blue-green / A·B and see
+ * Rollout-strategy selector, pick shadow / canary / blue-green / A·B and see
  * how live traffic splits between the current model (v1) and the new one (v2),
- * plus the risk / rollback / what-it-measures trade-offs. No data — pure illustration.
+ * plus the risk / rollback / what-it-measures trade-offs. No data, pure illustration.
  */
 const ACCENT = "#fb6f3c";
 const V1 = "#60a5fa"; // current model
@@ -19,28 +19,28 @@ const STRATS = [
 
 const META = {
   shadow: {
-    risk: "none — users never see v2",
+    risk: "none, users never see v2",
     rollback: "n/a (nothing is live)",
     measures: "offline diff vs the current model",
     use: "De-risk a new model on real traffic before a single user is served by it.",
   },
   canary: {
-    risk: "low — small blast radius",
-    rollback: "fast — drop the % back to 0",
+    risk: "low, small blast radius",
+    rollback: "fast, drop the % back to 0",
     measures: "live guardrail metrics (errors, p95, KPI)",
     use: "The standard live rollout: ramp 1% → 100%, watching metrics at each step.",
   },
   bluegreen: {
-    risk: "medium — everyone flips at once",
-    rollback: "instant — flip back to blue",
+    risk: "medium, everyone flips at once",
+    rollback: "instant, flip back to blue",
     measures: "post-switch health",
     use: "Two full environments; cut all traffic over at once, flip back instantly on trouble.",
   },
   ab: {
-    risk: "low–medium — half are on v2",
-    rollback: "fast — end the test",
+    risk: "low–medium, half are on v2",
+    rollback: "fast, end the test",
     measures: "the business KPI per arm, with statistics",
-    use: "The only true test — compare the real business metric (CTR, conversion) across arms.",
+    use: "The only true test, compare the real business metric (CTR, conversion) across arms.",
   },
 };
 
@@ -87,9 +87,9 @@ export default function RolloutStrategyViz() {
       {/* shadow: show the mirrored-but-not-served lane */}
       {strat === "shadow" && (
         <div className="mb-3">
-          <div className="font-mono text-[11px] text-ink-faint mb-1">v2 receives a mirrored copy — responses discarded</div>
+          <div className="font-mono text-[11px] text-ink-faint mb-1">v2 receives a mirrored copy, responses discarded</div>
           <div className="h-4 rounded-lg border border-dashed mb-1" style={{ borderColor: V2, background: `color-mix(in srgb, ${V2} 10%, transparent)` }} />
-          <div className="font-mono text-[10px] text-ink-faint">100% mirrored · 0% served — compare v2's answers to v1 offline, zero user risk.</div>
+          <div className="font-mono text-[10px] text-ink-faint">100% mirrored · 0% served, compare v2's answers to v1 offline, zero user risk.</div>
         </div>
       )}
 
@@ -103,7 +103,7 @@ export default function RolloutStrategyViz() {
           <input type="range" min={1} max={100} step={1} value={canaryPct}
             onChange={(e) => setCanaryPct(parseInt(e.target.value, 10))}
             className="w-full" style={{ accentColor: ACCENT }} />
-          <div className="font-mono text-[10px] text-ink-faint mt-1">Ramp up only while the guardrail metrics stay green — pull it back to 0 the moment they don't.</div>
+          <div className="font-mono text-[10px] text-ink-faint mt-1">Ramp up only while the guardrail metrics stay green, pull it back to 0 the moment they don't.</div>
         </div>
       )}
 
@@ -114,7 +114,7 @@ export default function RolloutStrategyViz() {
             {switched ? "↩ flip back to blue (v1)" : "⇄ flip traffic to green (v2)"}
           </Btn>
           <span className="font-mono text-[11px] text-ink-faint">
-            {switched ? "all traffic on v2 — rollback is one flip away" : "all traffic on v1; v2 is warm and ready"}
+            {switched ? "all traffic on v2, rollback is one flip away" : "all traffic on v1; v2 is warm and ready"}
           </span>
         </div>
       )}

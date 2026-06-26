@@ -16,7 +16,7 @@ export const TOOLS = [
     track: "dsa",
     name: "DSA · LAB",
     tag: "Structures · the WHAT",
-    desc: "Animated data structures with Python internals — see how a list grows, a hash collides, a tree balances.",
+    desc: "Animated data structures with Python internals, see how a list grows, a hash collides, a tree balances.",
     accent: "#38e0d6",
     status: "ready",
     Comp: DsaLab,
@@ -36,7 +36,7 @@ export const TOOLS = [
     track: "dsa",
     name: "The Identifier",
     tag: "Recognition · WHICH & WHEN",
-    desc: "Constraint decoder, pattern sniffer, and the tricks vault — read a problem, name the approach.",
+    desc: "Constraint decoder, pattern sniffer, and the tricks vault, read a problem, name the approach.",
     accent: "#ffcf4a",
     status: "ready",
     Comp: Identifier,
@@ -56,7 +56,7 @@ export const TOOLS = [
     track: "ai",
     name: "AI · LAB",
     tag: "Mechanics · the WHAT",
-    desc: "Attention, embeddings, sampling, and tokenization — the LLM internals you can watch work.",
+    desc: "Attention, embeddings, sampling, and tokenization, the LLM internals you can watch work.",
     accent: "#7c5cff",
     status: "ready",
     Comp: AiLab,
@@ -66,7 +66,7 @@ export const TOOLS = [
     track: "ai",
     name: "Model Bench",
     tag: "Approaches · the HOW",
-    desc: "RAG, agents, fine-tuning, evals, and the classic ML families — the recurring solution shapes.",
+    desc: "RAG, agents, fine-tuning, evals, and the classic ML families, the recurring solution shapes.",
     accent: "#00b4d8",
     status: "ready",
     Comp: ModelBench,
@@ -86,7 +86,7 @@ export const TOOLS = [
     track: "ai",
     name: "The Architect's Bench",
     tag: "Systems · SHOULD WE",
-    desc: "LLM system design — RAG, serving, evaluation, multi-agent — plus cost & capacity estimation.",
+    desc: "LLM system design, RAG, serving, evaluation, multi-agent, plus cost & capacity estimation.",
     accent: "#fb6f3c",
     status: "ready",
     Comp: ArchitectBench,
@@ -108,13 +108,13 @@ const TRACKS = [
     id: "dsa",
     label: "DSA · interview prep",
     blurb:
-      "The full DSA interview surface — from the data structures themselves up to the staff-level judgment rounds.",
+      "The full DSA interview surface, from the data structures themselves up to the staff-level judgment rounds.",
   },
   {
     id: "ai",
     label: "AI Architect · interview prep",
     blurb:
-      "The GenAI/LLM-systems interview — mechanics, solution patterns, the right-tool decisions, and system design.",
+      "The GenAI/LLM-systems interview, mechanics, solution patterns, the right-tool decisions, and system design.",
   },
 ];
 
@@ -169,8 +169,8 @@ function Landing() {
           Interview Labs
         </h1>
         <p className="text-lg text-ink-dim max-w-2xl leading-relaxed mb-14">
-          Two tracks of interactive tools — classic <span className="text-ink">DSA</span>{" "}
-          and <span className="text-ink">AI architecture</span> — each built to{" "}
+          Two tracks of interactive tools, classic <span className="text-ink">DSA</span>{" "}
+          and <span className="text-ink">AI architecture</span>, each built to{" "}
           <span className="text-ink">grasp the concept</span>, not just memorize it.
         </p>
 

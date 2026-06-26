@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Btn } from "../../components/ui.jsx";
 
 /*
- * ReAct agent trace — a baked Thought → Action → Observation loop that ends in a
+ * ReAct agent trace, a baked Thought → Action → Observation loop that ends in a
  * Final Answer. "next step" reveals one entry at a time; "reset" clears it.
  * Each revealed step is a full LLM call (the cost/latency multiplier note below).
  */
@@ -19,7 +19,7 @@ const TRACE = [
   { kind: "action", tool: 'get_hourly_forecast(city="Paris", window="day")' },
   { kind: "observation", text: "Rain likely 14:00–18:00; mornings dry." },
   { kind: "thought", text: "Rain falls during the afternoon, which overlaps typical outings. An umbrella is worth it." },
-  { kind: "final", text: "Yes — bring an umbrella. Paris has a 70% chance of rain this afternoon (roughly 2–6pm)." },
+  { kind: "final", text: "Yes, bring an umbrella. Paris has a 70% chance of rain this afternoon (roughly 2–6pm)." },
 ];
 
 const STYLES = {
@@ -99,7 +99,7 @@ export default function AgentLoopViz() {
 
       <div className="font-mono text-[11px] text-ink-faint leading-relaxed">
         {done
-          ? `Done in ${llmCalls} LLM calls + ${TRACE.filter((e) => e.kind === "action").length} tool calls. Each call re-sends the whole growing history, so total tokens climb faster than linearly — that's the real cost multiplier.`
+          ? `Done in ${llmCalls} LLM calls + ${TRACE.filter((e) => e.kind === "action").length} tool calls. Each call re-sends the whole growing history, so total tokens climb faster than linearly, that's the real cost multiplier.`
           : "A Thought and the tool call it emits come from the SAME model turn; the Observation comes back from your tool, then re-enters the next call's context. So tokens grow with every step, not just the step count."}
       </div>
     </div>

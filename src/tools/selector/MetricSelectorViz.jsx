@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
 /*
- * Metric selector — task → metric picker.
+ * Metric selector, task → metric picker.
  * Pick a task type, see the recommended metric(s), what each penalizes,
  * and the watch-out. Baked content per task; pure UI state.
  */
@@ -15,7 +15,7 @@ const TASKS = [
       { m: "Accuracy", what: "penalizes any wrong label equally" },
       { m: "F1", what: "balances precision and recall in one number" },
     ],
-    watch: "Fine while classes are roughly even — the moment they aren't, accuracy starts lying.",
+    watch: "Fine while classes are roughly even, the moment they aren't, accuracy starts lying.",
   },
   {
     id: "imbalanced",
@@ -24,7 +24,7 @@ const TASKS = [
       { m: "Precision & recall", what: "separates false alarms from misses" },
       { m: "AUC-PR", what: "summarizes the precision/recall trade-off across thresholds" },
     ],
-    watch: "Accuracy is meaningless when 99% are negative — a model that always says 'no' scores 99%.",
+    watch: "Accuracy is meaningless when 99% are negative, a model that always says 'no' scores 99%.",
   },
   {
     id: "ranking",
@@ -34,7 +34,7 @@ const TASKS = [
       { m: "MRR", what: "how high is the first relevant hit?" },
       { m: "nDCG", what: "rewards putting the most relevant items highest" },
     ],
-    watch: "Order and top-k coverage are everything — raw accuracy ignores where a hit lands.",
+    watch: "Order and top-k coverage are everything, raw accuracy ignores where a hit lands.",
   },
   {
     id: "regression",
@@ -43,7 +43,7 @@ const TASKS = [
       { m: "MAE", what: "average error in real units; robust to outliers" },
       { m: "RMSE", what: "squares errors, so it punishes big misses hard" },
     ],
-    watch: "RMSE is sensitive to outliers — pick it only if large errors genuinely hurt more.",
+    watch: "RMSE is sensitive to outliers, pick it only if large errors genuinely hurt more.",
   },
   {
     id: "generation",
@@ -53,7 +53,7 @@ const TASKS = [
       { m: "LLM-as-judge", what: "scores open-ended quality at scale" },
       { m: "Human eval + online signals", what: "ground truth for tone, helpfulness, harm" },
     ],
-    watch: "No single number captures it — layer offline checks, a judge, and live signals together.",
+    watch: "No single number captures it, layer offline checks, a judge, and live signals together.",
   },
 ];
 

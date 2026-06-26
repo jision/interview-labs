@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from "react";
 
 /*
- * Bias–variance — complexity slider, no model in the browser.
+ * Bias–variance, complexity slider, no model in the browser.
  * Two baked curves over polynomial degree 1..15:
- *   training error   — monotonically decreasing (more capacity fits train better)
- *   validation error — U-shaped (underfit on the left, overfit on the right)
+ *   training error, monotonically decreasing (more capacity fits train better)
+ *   validation error, U-shaped (underfit on the left, overfit on the right)
  * A marker tracks the current degree; we label the regime under it.
  * A tiny inline fit illustration is shown alongside the priority two-curve plot.
  */
@@ -84,7 +84,7 @@ export default function BiasVarianceViz() {
       <div className="text-sm text-ink-dim mb-3">
         Slide model complexity. Training error always falls; validation error is{" "}
         <span className="text-ink font-semibold">U-shaped</span>. The bottom of that U is the sweet
-        spot — too far right and the model memorizes noise.
+        spot, too far right and the model memorizes noise.
       </div>
 
       <div className="grid md:grid-cols-[1.6fr_1fr] gap-4">
@@ -131,7 +131,7 @@ export default function BiasVarianceViz() {
       {/* complexity slider */}
       <div className="mt-4">
         <div className="flex justify-between font-mono text-[11px] mb-1">
-          <span className="text-ink-dim">model complexity — polynomial degree</span>
+          <span className="text-ink-dim">model complexity, polynomial degree</span>
           <span style={{ color: ACCENT }}>{d}</span>
         </div>
         <input

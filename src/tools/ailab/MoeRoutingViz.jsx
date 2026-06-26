@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 
 /*
- * Mixture-of-Experts router — baked fixture, no model in the browser.
+ * Mixture-of-Experts router, baked fixture, no model in the browser.
  * Each token is sent to only its top-k experts (sparse activation), so the model
  * holds N experts' worth of capacity but runs only k of them per token.
  */
@@ -10,7 +10,7 @@ const ACCENT = "#7c5cff";
 const TOKENS = ["The", "cat", "sat", "on", "mat"];
 const N_EXPERTS = 8;
 
-// router affinity (gating weights) per token × expert — hand-authored to look
+// router affinity (gating weights) per token × expert, hand-authored to look
 // like a trained router with mild expert specialization.
 const AFFINITY = [
   [0.05, 0.10, 0.40, 0.08, 0.07, 0.12, 0.10, 0.08], // The
@@ -36,7 +36,7 @@ export default function MoeRoutingViz() {
   return (
     <div className="rounded-xl border border-line bg-surface p-4 md:p-5">
       <div className="text-sm text-ink-dim mb-3">
-        Pick a token — the <span className="text-ink font-semibold">router</span> sends it to only its{" "}
+        Pick a token, the <span className="text-ink font-semibold">router</span> sends it to only its{" "}
         <span className="text-ink font-semibold">top-{k}</span> of {N_EXPERTS} experts. The rest stay dark.
       </div>
 
@@ -113,7 +113,7 @@ export default function MoeRoutingViz() {
         ))}
       </div>
       <div className="mt-3 font-mono text-[11px] text-ink-faint leading-relaxed">
-        {N_EXPERTS}× the feed-forward capacity, but only ~{activePct}% of it runs per token — that's how MoE
+        {N_EXPERTS}× the feed-forward capacity, but only ~{activePct}% of it runs per token, that's how MoE
         scales knowledge without scaling per-token compute. The catch: all {N_EXPERTS} experts still sit in
         GPU memory, since the next token may route differently.
       </div>

@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Btn } from "../../components/ui.jsx";
 
 /*
- * RAG pipeline builder — baked corpus with precomputed similarity to a fixed query.
+ * RAG pipeline builder, baked corpus with precomputed similarity to a fixed query.
  * Knobs: top-k and a reranker toggle. Shows which chunks reach the prompt.
  */
 const ACCENT = "#00b4d8";
@@ -97,12 +97,12 @@ Question: ${QUERY}`}
           const distractorIn = retrieved.some((c) => c.id === "C3" || c.id === "C4");
           if (rerank) {
             return distractorIn
-              ? "Even reranked, a close-but-wrong chunk (C3/C4) reaches the prompt at this k — lower k and the reranker's ordering keeps it out."
-              : "Reranking pushes C3/C4 (about passwords, not resetting) below the cut, so only the answering chunks reach the prompt — precision up.";
+              ? "Even reranked, a close-but-wrong chunk (C3/C4) reaches the prompt at this k, lower k and the reranker's ordering keeps it out."
+              : "Reranking pushes C3/C4 (about passwords, not resetting) below the cut, so only the answering chunks reach the prompt, precision up.";
           }
           return distractorIn
             ? "Raw similarity pulls in C3/C4: topically close, but not actually answering. Turn the reranker on, or lower k."
-            : "At this k only the top chunk(s) make it — raise k and watch C3/C4 (close but wrong) sneak in under raw similarity.";
+            : "At this k only the top chunk(s) make it, raise k and watch C3/C4 (close but wrong) sneak in under raw similarity.";
         })()}
       </div>
     </div>

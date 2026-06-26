@@ -20,35 +20,35 @@ const ROWS = [
     modelAnswer: "Paris",
     goldenAnswer: "Paris",
     judge: 5,
-    note: "Both agree — exact match and judge pass.",
+    note: "Both agree, exact match and judge pass.",
   },
   {
     question: "Capital of Australia?",
     modelAnswer: "It's Canberra.",
     goldenAnswer: "Canberra",
     judge: 5,
-    note: "Correct but reworded — exact-match FAILS, judge passes.",
+    note: "Correct but reworded, exact-match FAILS, judge passes.",
   },
   {
     question: "Sum of 17 and 26?",
     modelAnswer: "forty-three",
     goldenAnswer: "43",
     judge: 5,
-    note: "Right answer, wrong format — exact-match can't see it.",
+    note: "Right answer, wrong format, exact-match can't see it.",
   },
   {
     question: "Who wrote 'Pride and Prejudice'?",
     modelAnswer: "Charles Dickens",
     goldenAnswer: "Jane Austen",
     judge: 1,
-    note: "Confidently wrong — both fail. This is the dangerous case.",
+    note: "Confidently wrong, both fail. This is the dangerous case.",
   },
   {
     question: "Largest planet in the solar system?",
     modelAnswer: "Jupiter",
     goldenAnswer: "Jupiter",
     judge: 5,
-    note: "Both agree — clean pass.",
+    note: "Both agree, clean pass.",
   },
 ];
 
@@ -128,7 +128,7 @@ export default function EvalPatternsViz() {
 
       <div className="mt-3 font-mono text-[11px] text-ink-faint leading-relaxed">
         Exact-match is cheap and objective but brittle: it fails “Canberra” reworded and “forty-three”
-        formatted. An LLM-judge catches those — yet both miss the confidently-wrong Dickens row. That's
+        formatted. An LLM-judge catches those, yet both miss the confidently-wrong Dickens row. That's
         why you layer evals: rules where there's one right answer, a judge for open-ended quality, and a
         human-labeled sample to catch the rest.
       </div>
