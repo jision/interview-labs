@@ -48,7 +48,7 @@ export default function LinkedListViz() {
     touch([nodes[idx - 1].id, nodes[idx].id, nodes[idx + 1]?.id].filter(Boolean));
     setTimeout(() => setNodes((ns) => ns.filter((_, i) => i !== idx)), 200);
     setLast(
-      `Delete node at index ${idx}: rewire prev.next = node.next. The rewire is O(1) — but finding the node first is O(n).`
+      `Delete node at index ${idx}: rewire prev.next = node.next. The rewire is O(1), but finding the node first is O(n).`
     );
   }
 

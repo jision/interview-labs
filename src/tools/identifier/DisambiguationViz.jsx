@@ -9,13 +9,13 @@ const CARDS = [
     q: "Greedy vs DP",
     decider: "Does a locally-best choice stay globally optimal?",
     answer:
-      "Greedy only when a local optimum provably leads to the global one (exchange argument / matroid). If a choice now can hurt later — i.e. overlapping subproblems with a recurrence — it's DP. When unsure, write the DP; greedy is the optimization you prove afterward.",
+      "Greedy only when a local optimum provably leads to the global one (exchange argument / matroid). If a choice now can hurt later, i.e. overlapping subproblems with a recurrence, it's DP. When unsure, write the DP; greedy is the optimization you prove afterward.",
   },
   {
     q: "BFS vs DFS",
     decider: "Do you need the SHORTEST path / nearest layer, or just reachability?",
     answer:
-      "BFS for shortest path in an unweighted graph and anything level-by-level (it explores by distance). DFS for existence/connectivity, topological sort, cycle detection, and backtracking — it goes deep with less memory on wide graphs.",
+      "BFS for shortest path in an unweighted graph and anything level-by-level (it explores by distance). DFS for existence/connectivity, topological sort, cycle detection, and backtracking, it goes deep with less memory on wide graphs.",
   },
   {
     q: "Sort vs Heap",
@@ -27,13 +27,13 @@ const CARDS = [
     q: "Recursion vs Iteration",
     decider: "Is the structure naturally nested, and is depth bounded?",
     answer:
-      "Recursion reads cleanly for trees, divide-and-conquer, and backtracking. But Python's recursion limit (~1000) and call overhead bite on deep/linear inputs — convert to an explicit stack or a loop when depth can reach n.",
+      "Recursion reads cleanly for trees, divide-and-conquer, and backtracking. But Python's recursion limit (~1000) and call overhead bite on deep/linear inputs, convert to an explicit stack or a loop when depth can reach n.",
   },
   {
     q: "Hash map vs Array index",
     decider: "Are the keys small dense integers, or arbitrary / sparse?",
     answer:
-      "Array indexing when keys are small contiguous ints (0..n) — fastest, cache-friendly, O(1) with no hashing. Hash map when keys are strings, large, sparse, or unknown up front. Counting 'a'–'z'? An array of 26 beats a dict.",
+      "Array indexing when keys are small contiguous ints (0..n), fastest, cache-friendly, O(1) with no hashing. Hash map when keys are strings, large, sparse, or unknown up front. Counting 'a'–'z'? An array of 26 beats a dict.",
   },
 ];
 

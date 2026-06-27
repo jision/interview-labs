@@ -28,7 +28,7 @@ function Constraints() {
         The input bound is a <em>spoiler</em>. Before you write a line of code, read{" "}
         <code className="text-ink font-mono">n ≤ ?</code> and back-solve the target Big-O: at roughly{" "}
         <strong>10⁸ operations per second</strong>, the largest <code className="text-ink font-mono">n</code> you
-        can afford pins down which complexity class — and therefore which technique — has to fit.
+        can afford pins down which complexity class, and therefore which technique, has to fit.
       </Lede>
 
       <Try><ConstraintDecoderViz /></Try>
@@ -42,19 +42,19 @@ function Constraints() {
           demands O(n log n) or O(n).
         </p>
         <Callout kind="tip" title="Interview line">
-          "n is up to 10⁵, so an O(n²) solution would be ~10¹⁰ operations — too slow. That pushes me toward
+          "n is up to 10⁵, so an O(n²) solution would be ~10¹⁰ operations, too slow. That pushes me toward
           sorting or a hash map for O(n log n) / O(n)." Saying this out loud signals you read constraints
           like a senior engineer.
         </Callout>
         <Callout kind="trap" title="n is a value, not always a count">
           When you see <code className="font-mono">n ≤ 10¹⁸</code>, n is a <em>number</em> you can't
-          enumerate — that's a hint for math, binary exponentiation, or digit DP over its ~18 digits, never
+          enumerate, that's a hint for math, binary exponentiation, or digit DP over its ~18 digits, never
           a loop to n.
         </Callout>
         <Callout kind="warn" title="In Python, shave a zero off">
           The <code className="font-mono">~10⁸ ops/sec</code> envelope is the C++-flavored convention. Pure
           CPython runs roughly <strong>10–100× slower</strong>, so in Python a safer working budget is closer
-          to <code className="font-mono">~10⁶–10⁷</code> ops/sec — drop a zero or two off the feasible{" "}
+          to <code className="font-mono">~10⁶–10⁷</code> ops/sec, drop a zero or two off the feasible{" "}
           <code className="font-mono">n</code>. The <em>complexity-class</em> reasoning (which technique
           fits) is unchanged; only the constant shifts.
         </Callout>
@@ -64,13 +64,13 @@ function Constraints() {
         <OpTable
           cols={["Input bound", "Largest viable", "", "What it's telling you"]}
           rows={[
-            { op: "n ≤ 10–12", avg: "O(n!)", avgTone: "bad", why: "Brute-force all orderings / backtracking — tiny by design." },
+            { op: "n ≤ 10–12", avg: "O(n!)", avgTone: "bad", why: "Brute-force all orderings / backtracking, tiny by design." },
             { op: "n ≤ 18–22", avg: "O(2ⁿ)", avgTone: "bad", why: "Bitmask DP over subsets; 2²⁰ ≈ 10⁶." },
             { op: "n ≤ 100–500", avg: "O(n³)", avgTone: "bad", why: "Floyd–Warshall, interval DP, triple loops are fine." },
             { op: "n ≤ 2000–5000", avg: "O(n²)", avgTone: "bad", why: "Two nested loops / classic 2D DP (LCS, edit distance)." },
-            { op: "n ≤ 10⁵–10⁶", avg: "O(n log n)", avgTone: "ok", why: "Sort / heap, or O(n) sliding window / hash — NOT O(n²)." },
+            { op: "n ≤ 10⁵–10⁶", avg: "O(n log n)", avgTone: "ok", why: "Sort / heap, or O(n) sliding window / hash, NOT O(n²)." },
             { op: "n ≤ 10⁷–10⁸", avg: "O(n)", avgTone: "ok", why: "Single linear pass, small constant; n log n gets risky." },
-            { op: "n ≥ 10⁹", avg: "O(log n)", avgTone: "good", why: "Can't even read all input — math, binary search, closed form." },
+            { op: "n ≥ 10⁹", avg: "O(log n)", avgTone: "good", why: "Can't even read all input, math, binary search, closed form." },
           ]}
         />
       </Block>
@@ -84,7 +84,7 @@ function Patterns() {
     <>
       <Lede>
         Problem statements are written in a code of their own. Certain phrases map almost deterministically
-        to a technique — once you've internalized the dictionary, half the problem is solved by the time you
+        to a technique, once you've internalized the dictionary, half the problem is solved by the time you
         finish reading it.
       </Lede>
 
@@ -92,11 +92,11 @@ function Patterns() {
 
       <Block eyebrow="under the hood" title="Why these mappings hold">
         <p className="text-ink-dim leading-relaxed mb-2">
-          They aren't superstition — each phrase encodes a structural property the technique exploits.{" "}
+          They aren't superstition, each phrase encodes a structural property the technique exploits.{" "}
           <strong>"Contiguous subarray"</strong> guarantees a window has two moving ends, so you never
           rescan. <strong>"Sorted input"</strong> hands you an ordering invariant that two-pointer and binary
           search consume directly. <strong>"All permutations"</strong> forces enumeration, which is only
-          tractable because <code className="font-mono">n</code> is small — tying right back to the
+          tractable because <code className="font-mono">n</code> is small, tying right back to the
           Constraint Decoder.
         </p>
         <Callout kind="tip" title="Read constraints AND keywords together">
@@ -105,7 +105,7 @@ function Patterns() {
           <code className="font-mono">n ≤ 20</code> ⇒ a 2ⁿ bitmask. Same idea, different gear.
         </Callout>
         <Callout kind="warn" title="Keywords hint, they don't prove">
-          "Sorted" usually means two-pointer — but if you also need order statistics or counts, it might be
+          "Sorted" usually means two-pointer, but if you also need order statistics or counts, it might be
           binary search on the answer. Use the chip as a first hypothesis, then confirm against the actual
           operation you must perform.
         </Callout>
@@ -120,7 +120,7 @@ function Budget() {
     <>
       <Lede>
         Every complexity class is a neighborhood with its own residents. Learn who lives where and you can
-        translate a target Big-O straight into a shortlist of algorithms — and sanity-check any idea against
+        translate a target Big-O straight into a shortlist of algorithms, and sanity-check any idea against
         the largest <code className="text-ink font-mono">n</code> it can survive.
       </Lede>
 
@@ -214,7 +214,7 @@ function Budget() {
         </Callout>
         <Callout kind="note" title="Constants and memory still matter">
           Big-O hides constant factors. An O(n) solution that allocates three arrays and chases pointers can
-          lose to a cache-friendly O(n log n) in the real world — but in interviews, the asymptotic class is
+          lose to a cache-friendly O(n log n) in the real world, but in interviews, the asymptotic class is
           almost always what's being graded.
         </Callout>
       </Block>
@@ -228,7 +228,7 @@ function Tricks() {
     <>
       <Lede>
         A small set of reusable tricks shows up across a huge fraction of problems. Each one has a{" "}
-        <em>tell</em> — the phrase or structure that should make you reach for it — and a one-line mechanism.
+        <em>tell</em>, the phrase or structure that should make you reach for it, and a one-line mechanism.
         Filter by category and drill the tell until it's reflexive.
       </Lede>
 
@@ -269,7 +269,7 @@ function Disambig() {
   return (
     <>
       <Lede>
-        The hardest calls aren't "do I know this technique" — they're "which of these two do I use here."
+        The hardest calls aren't "do I know this technique", they're "which of these two do I use here."
         Each fork below collapses to a single deciding question. Memorize the question, not a table of cases.
       </Lede>
 
@@ -283,7 +283,7 @@ function Disambig() {
           second-guessing.
         </p>
         <Callout kind="tip" title="When unsure, default safe">
-          Greedy vs DP? Write the DP — it's never <em>wrong</em>, only sometimes overkill, and you can prove
+          Greedy vs DP? Write the DP, it's never <em>wrong</em>, only sometimes overkill, and you can prove
           the greedy shortcut afterward. Recursion vs iteration with depth near n? Default to an explicit
           stack to dodge Python's recursion limit.
         </Callout>
@@ -312,7 +312,7 @@ export default function Identifier() {
       accent={ACCENT}
       eyebrow="Recognition · WHICH & WHEN"
       title="The Identifier"
-      subtitle="Reading a problem and naming the approach is its own skill — decode the constraints, sniff the pattern, recall the trick."
+      subtitle="Reading a problem and naming the approach is its own skill, decode the constraints, sniff the pattern, recall the trick."
       topics={TOPICS}
       activeId={active}
       onSelect={setActive}

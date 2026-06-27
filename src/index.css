@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* ──────────────────────────────────────────────────────────────
-   Design tokens — single source of truth for the whole site.
+   Design tokens, single source of truth for the whole site.
    Tailwind v4 turns each token into a utility automatically, e.g.
    --color-lab → bg-lab / text-lab / border-lab.
    ────────────────────────────────────────────────────────────── */
@@ -18,13 +18,13 @@
   --color-ink-dim: #a8b0bf;
   --color-ink-faint: #6b7480;
 
-  /* Per-tool accents — DSA track */
+  /* Per-tool accents, DSA track */
   --color-lab: #38e0d6;
   --color-bench: #e8553b;
   --color-ident: #ffcf4a;
   --color-staff: #d6a94c;
 
-  /* Per-tool accents — AI Architect track */
+  /* Per-tool accents, AI Architect track */
   --color-ailab: #7c5cff;
   --color-modelbench: #00b4d8;
   --color-selector: #ffb703;
@@ -67,7 +67,7 @@ body {
   border-radius: 8px;
 }
 
-/* Respect users who prefer no motion — visualizers fall back to instant */
+/* Respect users who prefer no motion, visualizers fall back to instant */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

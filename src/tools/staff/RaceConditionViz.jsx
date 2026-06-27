@@ -45,7 +45,7 @@ function buildTrace(ops, useLock) {
   let regB = null;
   // Structural lost-update detection (valid for ANY interleaving, not just this one):
   // `version` counts completed STOREs to count. A STORE is a lost update iff another
-  // STORE landed between this thread's LOAD and this STORE — i.e. the value it writes
+  // STORE landed between this thread's LOAD and this STORE, i.e. the value it writes
   // is based on a now-stale read, so it clobbers an increment it never saw.
   let version = 0;
   const loadedVer = [-1, -1];
@@ -57,12 +57,12 @@ function buildTrace(ops, useLock) {
       if (op.thread === 0) regA = count;
       else regB = count;
       loadedVer[op.thread] = version; // remember which version of count it read
-      msg = `Thread ${name}: LOAD — read shared count (${count}) into its register.`;
+      msg = `Thread ${name}: LOAD, read shared count (${count}) into its register.`;
     } else if (op.step === "ADD") {
       if (op.thread === 0) regA = (regA ?? 0) + 1;
       else regB = (regB ?? 0) + 1;
       const r = op.thread === 0 ? regA : regB;
-      msg = `Thread ${name}: ADD — register = ${r - 1} + 1 = ${r} (local only; count untouched).`;
+      msg = `Thread ${name}: ADD, register = ${r - 1} + 1 = ${r} (local only; count untouched).`;
     } else {
       const r = op.thread === 0 ? regA : regB;
       const staleBy = version - loadedVer[op.thread]; // STOREs since this thread's LOAD
@@ -70,9 +70,9 @@ function buildTrace(ops, useLock) {
       count = r ?? 0;
       version += 1; // this STORE bumps the version
       msg =
-        `Thread ${name}: STORE — write register (${r}) back → count = ${count}.` +
+        `Thread ${name}: STORE, write register (${r}) back → count = ${count}.` +
         (lost
-          ? ` ⚠ Stale write: count changed ${staleBy}× since this thread's LOAD, so this STORE clobbers an increment — it's LOST.`
+          ? ` ⚠ Stale write: count changed ${staleBy}× since this thread's LOAD, so this STORE clobbers an increment, it's LOST.`
           : "");
     }
     trace.push({ count, regA, regB, held, msg });
@@ -101,7 +101,7 @@ export default function RaceConditionViz() {
   const cur = !done ? ops[pc] : null;
 
   const initialMsg = useLock
-    ? "count = 0, one lock guards count. Each increment runs as an atomic critical section — no interleaving."
+    ? "count = 0, one lock guards count. Each increment runs as an atomic critical section, no interleaving."
     : "count = 0. Each thread runs count += 1 three times. Without a lock, += 1 is THREE steps and can interleave.";
   const note = state.msg || initialMsg;
 
@@ -239,7 +239,7 @@ export default function RaceConditionViz() {
           }}
         >
           {state.count === expected
-            ? `✓ count = ${state.count} = ${expected}. The lock made each += 1 atomic — no lost updates.`
+            ? `✓ count = ${state.count} = ${expected}. The lock made each += 1 atomic, no lost updates.`
             : `✕ count = ${state.count}, expected ${expected}. ${expected - state.count} update(s) lost: two threads read the same value and one STORE clobbered the other.`}
         </div>
       )}
@@ -274,7 +274,7 @@ function Lane({ label, color, reg, active, holds, step }) {
           className="px-1.5 py-0.5 rounded text-ink font-semibold"
           style={{ background: "#11131a", minWidth: 24, textAlign: "center" }}
         >
-          {reg == null ? "—" : reg}
+          {reg == null ? "-" : reg}
         </span>
         {step && (
           <span

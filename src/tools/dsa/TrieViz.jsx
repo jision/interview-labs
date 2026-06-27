@@ -79,7 +79,7 @@ export default function TrieViz() {
 
   function addWord(w) {
     if (words.includes(w)) {
-      setNote(`"${w}" is already in the trie — insert is idempotent; it just re-walks the same O(L) path.`);
+      setNote(`"${w}" is already in the trie, insert is idempotent; it just re-walks the same O(L) path.`);
       return;
     }
     setWords((ws) => [...ws, w]);
@@ -151,7 +151,7 @@ export default function TrieViz() {
         </div>
         <div className="flex flex-wrap gap-2 min-h-[2rem]">
           {completions.length === 0 ? (
-            <span className="text-ink-faint text-sm font-mono">— no matches —</span>
+            <span className="text-ink-faint text-sm font-mono">no matches</span>
           ) : (
             completions.map((w) => (
               <span
@@ -173,7 +173,7 @@ export default function TrieViz() {
         </div>
         <div className="flex flex-wrap gap-2">
           {available.length === 0 ? (
-            <span className="text-ink-faint text-sm font-mono">— pool exhausted —</span>
+            <span className="text-ink-faint text-sm font-mono">pool exhausted</span>
           ) : (
             available.map((w) => (
               <Btn key={w} tone={ACCENT} onClick={() => addWord(w)}>

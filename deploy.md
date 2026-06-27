@@ -1,9 +1,9 @@
 # Deploying the 4 DSA tools to GitHub Pages
 
-Your four artifact files are **React (JSX)** and the browser can't run them directly —
+Your four artifact files are **React (JSX)** and the browser can't run them directly,
 they must be **compiled to static HTML/CSS/JS** first. This guide wraps all four in one
 small **Vite + React** site (a landing page that links to each tool) and deploys it to
-GitHub Pages. **You don't need to edit the four files** — they're imported as-is.
+GitHub Pages. **You don't need to edit the four files**, they're imported as-is.
 
 There's a **ready-to-paste Claude Code prompt at the bottom** if you'd rather have it do
 everything.
@@ -22,7 +22,7 @@ everything.
 
 ---
 
-## Step 1 — Scaffold the project
+## Step 1, Scaffold the project
 
 ```bash
 npm create vite@latest dsa-study-lab -- --template react
@@ -34,10 +34,10 @@ npm install react-router-dom
 > The `gh-pages` package is only needed for the *alternative* deploy method (Step 6B).
 > The recommended method (6A, GitHub Actions) doesn't need it.
 
-## Step 2 — Add your four tools
+## Step 2, Add your four tools
 
 Create a folder `src/tools/` and save the four files there with these names
-(rename them — it keeps the imports clean):
+(rename them, it keeps the imports clean):
 
 | Your file                | Save as                       |
 |--------------------------|-------------------------------|
@@ -46,10 +46,10 @@ Create a folder `src/tools/` and save the four files there with these names
 | `dsa-identifier.jsx`     | `src/tools/Identifier.jsx`    |
 | `dsa-staff-bench.jsx`    | `src/tools/StaffBench.jsx`    |
 
-> Imports on the GitHub Actions runner (Linux) are **case-sensitive** — match the
+> Imports on the GitHub Actions runner (Linux) are **case-sensitive**, match the
 > capitalization above exactly.
 
-## Step 3 — Replace `src/App.jsx` with the landing hub
+## Step 3, Replace `src/App.jsx` with the landing hub
 
 Overwrite `src/App.jsx` with this. It shows a landing page and routes to each tool.
 It uses `HashRouter`, so refreshing a tool page never 404s on GitHub Pages.
@@ -94,7 +94,7 @@ function Landing() {
           DSA Study Lab
         </h1>
         <p style={{ fontSize: 17, lineHeight: 1.6, color: "#a8a097", maxWidth: 640, marginBottom: 44 }}>
-          Four interactive tools covering the full interview surface — from the data structures
+          Four interactive tools covering the full interview surface, from the data structures
           themselves up to the staff-level judgment rounds.
         </p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: 16 }}>
@@ -135,9 +135,9 @@ export default function App() {
 }
 ```
 
-> `src/main.jsx` from the Vite template already renders `<App />` — leave it alone.
+> `src/main.jsx` from the Vite template already renders `<App />`, leave it alone.
 
-## Step 4 — Set the base path in `vite.config.js`
+## Step 4, Set the base path in `vite.config.js`
 
 **This is the #1 thing people get wrong.** Replace `vite.config.js` with this and set
 the repo name (keep the leading and trailing slashes):
@@ -154,7 +154,7 @@ export default defineConfig({
 });
 ```
 
-## Step 5 — Test locally, then push to GitHub
+## Step 5, Test locally, then push to GitHub
 
 ```bash
 npm run dev                       # open the printed localhost URL, click through all 4 tools
@@ -175,7 +175,7 @@ git push -u origin main
 
 ---
 
-## Step 6A — Deploy via GitHub Actions  ★ recommended (official Vite method)
+## Step 6A, Deploy via GitHub Actions  ★ recommended (official Vite method)
 
 1. On GitHub: **Settings → Pages → Build and deployment → Source → "GitHub Actions"**.
 2. Create `.github/workflows/deploy.yml` with the official Vite workflow below, commit, and push.
@@ -242,7 +242,7 @@ https://USERNAME.github.io/dsa-study-lab/
 
 ---
 
-## Step 6B — Deploy via the `gh-pages` package  (simpler one-off alternative)
+## Step 6B, Deploy via the `gh-pages` package  (simpler one-off alternative)
 
 If you'd rather just run one command instead of using Actions:
 
@@ -310,7 +310,7 @@ Re-run `npm run deploy` anytime you change something.
 >    tool linking to `#/dsa-lab`, `#/interview-bench`, `#/identifier`, `#/staff-bench`, and a
 >    fixed "← all tools" link on each tool route. (Use the accent colors #38e0d6, #e8553b,
 >    #ffcf4a, #d6a94c respectively.)
-> 4. Set `base: "/REPO_NAME/"` in `vite.config.js` — ask me for the exact repo name.
+> 4. Set `base: "/REPO_NAME/"` in `vite.config.js`, ask me for the exact repo name.
 > 5. Run `npm run build` and fix any errors until it builds clean.
 > 6. Add the official Vite GitHub Pages workflow at `.github/workflows/deploy.yml`
 >    (checkout@v6, setup-node@v6 with node lts/*, configure-pages@v6,

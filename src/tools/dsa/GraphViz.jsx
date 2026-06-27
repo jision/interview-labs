@@ -120,7 +120,7 @@ export default function GraphViz() {
     setFrontier(kind === "BFS" ? [start] : [start]);
     setNote(
       kind === "BFS"
-        ? `BFS(${start}): a QUEUE (FIFO) explores level by level — in an unweighted graph this finds the shortest path in edges.`
+        ? `BFS(${start}): a QUEUE (FIFO) explores level by level, in an unweighted graph this finds the shortest path in edges.`
         : `DFS(${start}): a STACK (LIFO) dives as deep as possible before backtracking.`
     );
 
@@ -250,7 +250,7 @@ export default function GraphViz() {
           </div>
           <div className="flex flex-wrap gap-1.5 min-h-[1.75rem]">
             {order.length === 0 ? (
-              <span className="text-ink-faint text-sm font-mono">— not started —</span>
+              <span className="text-ink-faint text-sm font-mono">not started</span>
             ) : (
               order.map((id, i) => (
                 <span

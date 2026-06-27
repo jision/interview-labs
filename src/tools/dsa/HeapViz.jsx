@@ -28,7 +28,7 @@ export default function HeapViz() {
     setHeap(a);
     flash(touched);
     setNote(
-      `insert(${v}): add at the end, then "sift up" — swap with parent (index (i-1)//2) while smaller. ${touched.length - 1} swap${touched.length - 1 !== 1 ? "s" : ""} → O(log n).`
+      `insert(${v}): add at the end, then "sift up", swap with parent (index (i-1)//2) while smaller. ${touched.length - 1} swap${touched.length - 1 !== 1 ? "s" : ""} → O(log n).`
     );
   }
 
@@ -111,7 +111,7 @@ export default function HeapViz() {
         </svg>
       </div>
 
-      {/* Array view — the actual storage */}
+      {/* Array view, the actual storage */}
       <div className="mb-1 font-mono text-[10px] uppercase tracking-wider text-ink-faint">backing array</div>
       <div className="flex flex-wrap gap-1.5 pb-6 mb-3">
         {heap.map((v, i) => (

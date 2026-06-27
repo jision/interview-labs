@@ -5,8 +5,8 @@ const ACCENT = "#d6a94c";
 
 /* RandomizedSet: average O(1) insert / remove / getRandom.
    The trick is keeping TWO structures in sync:
-     vals  — a dense array of the values (no holes)
-     idx   — a dict  val -> position of that value in `vals`
+     vals, a dense array of the values (no holes)
+     idx, a dict val -> position of that value in `vals`
    Insert appends and records the position. The hard one is remove:
    to delete from the middle of an array in O(1) you can't shift, so you
    SWAP the doomed element with the last element, fix the moved element's
@@ -67,7 +67,7 @@ export default function InsertDeleteGetRandomViz() {
     const lastVal = vals[lastIdx];
 
     if (i === lastIdx) {
-      // removing the tail itself — no swap needed
+      // removing the tail itself, no swap needed
       setVals((xs) => xs.slice(0, -1));
       setIdx((m) => {
         const n = { ...m };
@@ -152,14 +152,14 @@ export default function InsertDeleteGetRandomViz() {
         <span className="text-ink-faint">
           last index{" "}
           <span className="text-ink font-semibold">
-            {vals.length ? lastIdx : "—"}
+            {vals.length ? lastIdx : "-"}
           </span>
         </span>
       </div>
 
       {/* The dense values array */}
       <div className="font-mono text-[10px] uppercase tracking-wider text-ink-faint/70 mb-1.5">
-        vals — dense array (no holes)
+        vals, dense array (no holes)
       </div>
       <div className="flex flex-wrap gap-2 pb-7 mb-2 min-h-[3.5rem]">
         {vals.length === 0 && (
@@ -206,7 +206,7 @@ export default function InsertDeleteGetRandomViz() {
 
       {/* The val -> index dict */}
       <div className="font-mono text-[10px] uppercase tracking-wider text-ink-faint/70 mb-1.5 mt-3">
-        idx — dict val → index
+        idx, dict val → index
       </div>
       <div className="flex flex-wrap gap-2 mb-1 min-h-[2.5rem]">
         {entries.length === 0 && (

@@ -12,7 +12,7 @@ const RING = 65536;
 
 /* A small deterministic string hash (FNV-1a) finished with a splitmix32
    avalanche step, folded into the ring. Same input → same position, every
-   render, with no PRNG anywhere — that determinism is what makes consistent
+   render, with no PRNG anywhere, that determinism is what makes consistent
    hashing *consistent*: a key's home is decided by identity, not chance. The
    avalanche step just spreads similar labels (node-N0, node-N1, …) far apart
    on the ring so the demo isn't a clump; a real ring uses MD5/SHA for this. */
@@ -71,7 +71,7 @@ function ownerOf(keyPos, nodes) {
   return best;
 }
 
-/* Deterministic seed data — labels chosen so their hashes spread out nicely
+/* Deterministic seed data, labels chosen so their hashes spread out nicely
    around the ring. Positions are derived purely from hash(label). */
 const SEED_NODES = ["host-B", "host-2", "host-H"];
 const SEED_KEYS = ["img:42", "tag:88", "doc:17", "sess:64", "blob:1", "order:1"];
@@ -144,7 +144,7 @@ export default function ConsistentHashingViz() {
   function addNode() {
     if (nodes.length >= NODE_COLORS.length) {
       setNote(
-        `Demo caps at ${NODE_COLORS.length} nodes so colors stay legible — remove one first. The math holds for any N.`
+        `Demo caps at ${NODE_COLORS.length} nodes so colors stay legible, remove one first. The math holds for any N.`
       );
       return;
     }
@@ -164,7 +164,7 @@ export default function ConsistentHashingViz() {
 
     // Keys that REMAP onto the new node = keys whose owner *changes* to it.
     // Geometrically: keys in the arc from the previous (counter-clockwise)
-    // node up to the new node — previously owned by the new node's clockwise
+    // node up to the new node, previously owned by the new node's clockwise
     // successor. We compute it by simply re-running ownership.
     const claimed = keys.filter((k) => {
       const before = ownerByKey[k.id];
@@ -175,13 +175,13 @@ export default function ConsistentHashingViz() {
     setNodes(nextNodes);
     flash(claimed.map((k) => k.id));
     setNote(
-      `add ${label} at position ${pos}. Only ${claimed.length} of ${keys.length} keys move — they hop off their old node onto ${label}. Every other key stays put. That ~K/N churn is the whole point: a classic hash-mod-N would have remapped almost all ${keys.length}.`
+      `add ${label} at position ${pos}. Only ${claimed.length} of ${keys.length} keys move, they hop off their old node onto ${label}. Every other key stays put. That ~K/N churn is the whole point: a classic hash-mod-N would have remapped almost all ${keys.length}.`
     );
   }
 
   function removeNode() {
     if (nodes.length <= 1) {
-      setNote("Need at least one node to host the keys — can't remove the last one.");
+      setNote("Need at least one node to host the keys, can't remove the last one.");
       return;
     }
     // remove the most-recently-added node (highest id) for a predictable demo
@@ -193,14 +193,14 @@ export default function ConsistentHashingViz() {
     const targets = new Set(
       orphaned.map((k) => {
         const o = ownerOf(k.pos, nextNodes);
-        return o ? o.label : "—";
+        return o ? o.label : "-";
       })
     );
 
     setNodes(nextNodes);
     flash(orphaned.map((k) => k.id));
     setNote(
-      `remove ${victim.label}. Its ${orphaned.length} key${orphaned.length === 1 ? "" : "s"} fall through to the next node clockwise (${[...targets].join(", ") || "—"}). Keys on the other ${nextNodes.length} node${nextNodes.length === 1 ? "" : "s"} never moved — failure is local.`
+      `remove ${victim.label}. Its ${orphaned.length} key${orphaned.length === 1 ? "" : "s"} fall through to the next node clockwise (${[...targets].join(", ") || "none"}). Keys on the other ${nextNodes.length} node${nextNodes.length === 1 ? "" : "s"} never moved, failure is local.`
     );
   }
 
@@ -219,12 +219,12 @@ export default function ConsistentHashingViz() {
     const owner = ownerOf(pos, nodes);
     setKeys((ks) => [...ks, newKey]);
     // highlight the new key, but adding a key moves no EXISTING key, so don't
-    // report it in the "keys moved" stat — remap-on-membership-change is a
+    // report it in the "keys moved" stat, remap-on-membership-change is a
     // node-set concept, not a key-set one.
     setLastMoved(0);
     flash([newKey.id], { countAsMoved: false });
     setNote(
-      `add ${label} → hashes to position ${pos}, lands on the ring, and is claimed by the first node clockwise: ${owner ? owner.label : "—"}. No other key is touched.`
+      `add ${label} → hashes to position ${pos}, lands on the ring, and is claimed by the first node clockwise: ${owner ? owner.label : "-"}. No other key is touched.`
     );
   }
 
@@ -271,7 +271,7 @@ export default function ConsistentHashingViz() {
         <span className="text-ink-faint">
           keys moved (last op){" "}
           <span className="font-semibold" style={{ color: lastMoved != null ? ACCENT : undefined }}>
-            {lastMoved == null ? "—" : `${lastMoved} / ${keys.length}`}
+            {lastMoved == null ? "-" : `${lastMoved} / ${keys.length}`}
           </span>
         </span>
       </div>

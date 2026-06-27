@@ -6,7 +6,7 @@ const M = 24; // number of bits in the array
 const K = 3; // number of hash functions
 
 /* Three DETERMINISTIC hash functions over the characters of a word.
-   Same word always yields the same three indices — no randomness anywhere,
+   Same word always yields the same three indices, no randomness anywhere,
    which is exactly what a real Bloom filter needs (the hashes must agree
    between add() and query()). Each is a small rolling polynomial mod M. */
 function hashes(word) {
@@ -25,8 +25,8 @@ function hashes(word) {
 /* Pool ordered so the default buttons tell a clean story:
    add cat, dog, cod  →  ant becomes a FALSE POSITIVE, fox stays a clean negative.
      cat → [6, 21, 7]   dog → [20, 23, 13]   cod → [16, 19, 1]
-     ant → [23, 20, 16] — every bit already 1 (23,20 from dog; 16 from cod) → false positive
-     fox → [15, 18, 22] — bit 15 is still 0 → definitely not in set            */
+     ant → [23, 20, 16], every bit already 1 (23,20 from dog; 16 from cod) → false positive
+     fox → [15, 18, 22], bit 15 is still 0 → definitely not in set            */
 const POOL = ["cat", "dog", "cod", "ant", "fox", "bee", "elk", "ram"];
 
 function emptyBits() {
@@ -93,8 +93,8 @@ export default function BloomFilterViz() {
     flash(idx, truly ? "in" : "fp");
     setNote(
       truly
-        ? `query("${word}") → bits [${idx.join(", ")}] all 1, and "${word}" was added → POSSIBLY in set (here, truly present). A member always reads "possibly in set" — no false negatives.`
-        : `query("${word}") → bits [${idx.join(", ")}] all 1, so it reads POSSIBLY in set — but "${word}" was never added. This is a FALSE POSITIVE: other words' bits collided to cover all ${K} of its bits.`
+        ? `query("${word}") → bits [${idx.join(", ")}] all 1, and "${word}" was added → POSSIBLY in set (here, truly present). A member always reads "possibly in set", no false negatives.`
+        : `query("${word}") → bits [${idx.join(", ")}] all 1, so it reads POSSIBLY in set, but "${word}" was never added. This is a FALSE POSITIVE: other words' bits collided to cover all ${K} of its bits.`
     );
   }
 
@@ -116,7 +116,7 @@ export default function BloomFilterViz() {
     verdict === "in"
       ? { color: "#4ade80", text: "✓ POSSIBLY IN SET" }
       : verdict === "fp"
-        ? { color: "#fbbf24", text: "✓ POSSIBLY IN SET — FALSE POSITIVE" }
+        ? { color: "#fbbf24", text: "✓ POSSIBLY IN SET, FALSE POSITIVE" }
         : verdict === "out"
           ? { color: "#f87171", text: "✕ DEFINITELY NOT IN SET" }
           : verdict === "set"

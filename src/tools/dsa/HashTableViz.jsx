@@ -35,7 +35,7 @@ export default function HashTableViz() {
     const used = new Set(pairs.map((p) => p.key));
     const avail = WORDS.filter((w) => !used.has(w));
     if (!avail.length) {
-      setNote("Out of demo words — reset to keep going.");
+      setNote("Out of demo words, reset to keep going.");
       return;
     }
     const key = avail[Math.floor(Math.random() * avail.length)];

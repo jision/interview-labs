@@ -22,7 +22,7 @@ const TRICKS = [
     name: "Hash for O(1) lookup",
     cat: "Hashing",
     tell: "'Have I seen…?', complements (two-sum), dedup, counting.",
-    how: "Trade O(n) space for O(1) membership — collapses an O(n²) nested scan to O(n).",
+    how: "Trade O(n) space for O(1) membership, collapses an O(n²) nested scan to O(n).",
   },
   {
     name: "Coordinate compression",
@@ -64,13 +64,13 @@ const TRICKS = [
     name: "Sentinel / dummy node",
     cat: "Lists",
     tell: "Linked-list edits where the head/tail might change.",
-    how: "dummy = Node(0); dummy.next = head; return dummy.next — kills head-deletion edge cases.",
+    how: "dummy = Node(0); dummy.next = head; return dummy.next, kills head-deletion edge cases.",
   },
   {
     name: "Fast & slow pointers",
     cat: "Lists",
     tell: "Cycle detection, middle of a list, or n-th-from-end in one pass.",
-    how: "Slow moves 1, fast moves 2; they meet iff there's a cycle (Floyd) — O(1) space.",
+    how: "Slow moves 1, fast moves 2; they meet iff there's a cycle (Floyd), O(1) space.",
   },
   {
     name: "Rabin–Karp rolling hash",

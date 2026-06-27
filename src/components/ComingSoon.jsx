@@ -30,7 +30,7 @@ export function ComingSoon({ accent, eyebrow, title, blurb, planned = [] }) {
         </div>
 
         <p className="mt-6 text-sm text-ink-faint">
-          DSA · LAB is the flagship and is built first — the rest follow the same design
+          DSA · LAB is the flagship and is built first, the rest follow the same design
           system, so they'll come together fast.
         </p>
       </div>

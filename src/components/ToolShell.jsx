@@ -17,7 +17,7 @@ export function BackLink() {
 }
 
 /*
- * ToolShell — the standard tool layout.
+ * ToolShell, the standard tool layout.
  *  - sticky header with eyebrow / title / subtitle
  *  - left topic sidebar (becomes a horizontal scroller on small screens)
  *  - scrollable main content

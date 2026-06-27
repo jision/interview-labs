@@ -114,7 +114,7 @@ export default function EstimatorViz() {
       <p className="text-sm text-ink-dim leading-relaxed mt-4">
         Method: <span className="text-ink">QPS = daily events ÷ ~10⁵ s/day</span>. Reads usually
         dominate writes ~100:1, and peak traffic runs 2–3× average. Storage = events/day × payload ×
-        days. Round aggressively — the goal is the right order of magnitude, not a precise figure.
+        days. Round aggressively, the goal is the right order of magnitude, not a precise figure.
       </p>
     </div>
   );

@@ -33,7 +33,7 @@ export default function TokenBucketViz() {
   }
 
   // Decide from committed state in the handler (not inside the updater) so the
-  // counters/flash fire exactly once — even with React StrictMode double-invoking updaters.
+  // counters/flash fire exactly once, even with React StrictMode double-invoking updaters.
   function request() {
     if (tokens > 0) {
       setTokens(tokens - 1);
@@ -53,7 +53,7 @@ export default function TokenBucketViz() {
     doFlash("refill");
     setNote(
       next === tokens
-        ? `tick: bucket already full at ${CAP} — refill is capped, extra tokens are discarded (this is the burst limit).`
+        ? `tick: bucket already full at ${CAP}, refill is capped, extra tokens are discarded (this is the burst limit).`
         : `tick: refilled +${REFILL} → ${next} tokens. Refill is steady; the bucket caps at ${CAP}.`
     );
   }

@@ -12,7 +12,7 @@ const NUMS = [2, 1, 5, 1, 3, 2, 4, 1];
 
 function buildTrace(K) {
   // states[i] = state after i right-edge steps. states[0] = empty window.
-  const initial = `Goal: the LONGEST window with sum ≤ ${K}. Step to pull in the next element — if it breaks the budget, the window auto-shrinks from the left.`;
+  const initial = `Goal: the LONGEST window with sum ≤ ${K}. Step to pull in the next element, if it breaks the budget, the window auto-shrinks from the left.`;
   const states = [{ l: 0, r: -1, sum: 0, len: 0, best: { len: 0, l: 0, r: -1 }, dropped: [], msg: initial }];
   let l = 0;
   let best = { len: 0, l: 0, r: -1 };

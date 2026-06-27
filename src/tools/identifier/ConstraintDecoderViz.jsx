@@ -13,7 +13,7 @@ const ROWS = [
     nNum: 10,
     target: "O(n!) · O(2^n · n)",
     targetTone: "bad",
-    hint: "Tiny. Brute force everything — try all orderings.",
+    hint: "Tiny. Brute force everything, try all orderings.",
     in: ["Backtracking / permutations", "Brute-force all subsets", "Bitmask over states"],
     out: [],
     ops: "10! ≈ 3.6e6",
@@ -23,9 +23,9 @@ const ROWS = [
     nNum: 20,
     target: "O(2^n) · O(2^n · n)",
     targetTone: "bad",
-    hint: "Subset / bitmask DP. 2^20 ≈ 1e6 — iterate over masks.",
+    hint: "Subset / bitmask DP. 2^20 ≈ 1e6, iterate over masks.",
     in: ["Bitmask DP (subset states)", "Meet-in-the-middle", "Enumerate all subsets"],
-    out: ["O(n!) — 20! is astronomical"],
+    out: ["O(n!), 20! is astronomical"],
     ops: "2^20 ≈ 1.0e6",
   },
   {
@@ -35,7 +35,7 @@ const ROWS = [
     targetTone: "bad",
     hint: "Cubic is fine. Floyd–Warshall, interval/Knapsack DP, triple loops.",
     in: ["O(n^3) DP (Floyd–Warshall, MCM)", "O(n^2) easily", "Interval DP"],
-    out: ["O(2^n) — 2^100 impossible"],
+    out: ["O(2^n), 2^100 impossible"],
     ops: "100^3 = 1e6",
   },
   {
@@ -55,7 +55,7 @@ const ROWS = [
     targetTone: "bad",
     hint: "Quadratic. Two nested loops / classic 2D DP (LCS, edit distance).",
     in: ["O(n^2) DP", "Two nested loops", "O(n^2) all-pairs on small n"],
-    out: ["O(n^3) — 8e9 too slow"],
+    out: ["O(n^3), 8e9 too slow"],
     ops: "2000^2 = 4e6",
   },
   {
@@ -65,7 +65,7 @@ const ROWS = [
     targetTone: "bad",
     hint: "Upper edge of quadratic (2.5e7). Anything cubic dies here.",
     in: ["O(n^2) DP", "O(n^2) (still ~2.5e7)"],
-    out: ["O(n^3) — 1.25e11 hopeless"],
+    out: ["O(n^3), 1.25e11 hopeless"],
     ops: "5000^2 = 2.5e7",
   },
   {
@@ -73,9 +73,9 @@ const ROWS = [
     nNum: 1e5,
     target: "O(n log n)",
     targetTone: "ok",
-    hint: "The classic line. Sort / heap / O(n) sliding-window — NOT O(n^2).",
+    hint: "The classic line. Sort / heap / O(n) sliding-window, NOT O(n^2).",
     in: ["O(n log n) sort or heap", "O(n) two-pointer / sliding window", "Hash map O(n)"],
-    out: ["O(n^2) — 1e10 too slow"],
+    out: ["O(n^2), 1e10 too slow"],
     ops: "n log n ≈ 1.7e6",
   },
   {
@@ -85,7 +85,7 @@ const ROWS = [
     targetTone: "ok",
     hint: "Linear or n log n, with a small constant. Be cache-aware.",
     in: ["O(n) single pass", "O(n log n) sort (tight)", "Counting / radix sort"],
-    out: ["O(n^2) — 1e12"],
+    out: ["O(n^2), 1e12"],
     ops: "n log n ≈ 2e7",
   },
   {
@@ -105,7 +105,7 @@ const ROWS = [
     targetTone: "good",
     hint: "You can't even READ n items. Answer with math / binary search / formula.",
     in: ["Closed-form math", "Binary search on the answer", "Matrix-exponent / O(log n)", "Greedy O(1)"],
-    out: ["Anything O(n) — can't touch all input"],
+    out: ["Anything O(n), can't touch all input"],
     ops: "must avoid touching all n",
   },
   {
@@ -115,7 +115,7 @@ const ROWS = [
     targetTone: "good",
     hint: "n is a VALUE, not a count. Fast exponentiation, digit DP, number theory.",
     in: ["O(log n) binary exponentiation", "Digit DP (over ~18 digits)", "Number theory / gcd"],
-    out: ["O(n) — 1e18 is not enumerable"],
+    out: ["O(n), 1e18 is not enumerable"],
     ops: "log2(1e18) ≈ 60",
   },
 ];
@@ -180,7 +180,7 @@ export default function ConstraintDecoderViz() {
       <div className="grid sm:grid-cols-2 gap-3">
         <div className="rounded-lg p-3" style={{ background: "color-mix(in srgb,#4ade80 7%,transparent)", border: "1px solid rgba(74,222,128,0.25)" }}>
           <div className="font-mono text-[10px] uppercase tracking-wider mb-2 font-bold" style={{ color: "#4ade80" }}>
-            in budget — reach for
+            in budget, reach for
           </div>
           <ul className="space-y-1.5">
             {row.in.map((t) => (
@@ -193,7 +193,7 @@ export default function ConstraintDecoderViz() {
         </div>
         <div className="rounded-lg p-3" style={{ background: "color-mix(in srgb,#f87171 7%,transparent)", border: "1px solid rgba(248,113,113,0.25)" }}>
           <div className="font-mono text-[10px] uppercase tracking-wider mb-2 font-bold" style={{ color: "#f87171" }}>
-            too slow — ruled out
+            too slow, ruled out
           </div>
           {row.out.length ? (
             <ul className="space-y-1.5">
@@ -205,7 +205,7 @@ export default function ConstraintDecoderViz() {
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-ink-faint italic">Nothing — n is so small even O(n!) clears the budget.</p>
+            <p className="text-sm text-ink-faint italic">Nothing, n is so small even O(n!) clears the budget.</p>
           )}
         </div>
       </div>

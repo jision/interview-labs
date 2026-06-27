@@ -36,7 +36,7 @@ function TwoPointers() {
   return (
     <>
       <Lede>
-        Two indices walking the same array — usually from opposite ends, sometimes both forward at
+        Two indices walking the same array, usually from opposite ends, sometimes both forward at
         different speeds. The win is dropping a brute-force O(n²) pair search to a single O(n) pass by
         exploiting <em>order</em>: each move provably eliminates a candidate you never have to revisit.
       </Lede>
@@ -89,14 +89,14 @@ function TwoPointers() {
             { op: "two-end scan (sorted in)", avg: "O(n)", avgTone: "ok", worst: "O(n)", worstTone: "ok", why: "Each pointer moves inward at most n times total." },
             { op: "+ sorting first", avg: "O(n log n)", avgTone: "bad", worst: "O(n log n)", worstTone: "bad", why: "The sort dominates the linear scan." },
             { op: "3-sum (outer loop + 2-ptr)", avg: "O(n²)", avgTone: "bad", worst: "O(n²)", worstTone: "bad", why: "n anchors, each an O(n) inner scan." },
-            { op: "extra space", avg: "O(1)", avgTone: "good", worst: "O(1)", worstTone: "good", why: "Just two indices — the in-place selling point." },
+            { op: "extra space", avg: "O(1)", avgTone: "good", worst: "O(1)", worstTone: "good", why: "Just two indices, the in-place selling point." },
           ]}
         />
       </Block>
 
       <Block eyebrow="tips & traps" title="What trips people up">
         <Callout kind="trap" title="Two pointers needs ORDER">
-          On an <em>unsorted</em> array, &quot;move the smaller one in&quot; is meaningless — you can skip
+          On an <em>unsorted</em> array, &quot;move the smaller one in&quot; is meaningless, you can skip
           the answer. If you can&apos;t sort (e.g. you must return original indices), use a hash map
           instead. Sorting also destroys original indices, so capture them first if you need them.
         </Callout>
@@ -116,7 +116,7 @@ function SlidingWindow() {
       <Lede>
         A contiguous window <C>[l, r]</C> that slides across the array while you maintain a running
         aggregate (sum, count, a frequency map). Instead of recomputing each subarray from scratch
-        (O(n²)), you update the aggregate incrementally as the window&apos;s edges move — one O(n) pass.
+        (O(n²)), you update the aggregate incrementally as the window&apos;s edges move, one O(n) pass.
       </Lede>
 
       <Try>
@@ -155,7 +155,7 @@ function SlidingWindow() {
         <Callout kind="tip" title="Reach for this when you see…">
           &quot;contiguous subarray / substring&quot; plus &quot;longest / shortest / max / min / at
           most K / exactly K&quot;; &quot;sum / average of every length-k window&quot;; or anything where a
-          brute-force answer enumerates all subarrays. The word <strong>contiguous</strong> is the tell —
+          brute-force answer enumerates all subarrays. The word <strong>contiguous</strong> is the tell,
           if order can be rearranged, it&apos;s probably not a window.
         </Callout>
       </Block>
@@ -174,14 +174,14 @@ function SlidingWindow() {
 
       <Block eyebrow="tips & traps" title="What trips people up">
         <Callout kind="trap" title="The shrink condition is the whole problem">
-          A <C>while</C> (shrink until valid), not an <C>if</C>, is usually what you need — one new right
+          A <C>while</C> (shrink until valid), not an <C>if</C>, is usually what you need, one new right
           element can force several left moves. Getting the invariant (&quot;the window is always
           valid after the inner loop&quot;) precise is where bugs live.
         </Callout>
         <Callout kind="trap" title="Negative numbers break the monotonic assumption">
           &quot;Shortest subarray with sum ≥ target&quot; is a clean window <em>only</em> when all values
           are non-negative (growing the window grows the sum). With negatives, the sum isn&apos;t
-          monotonic — you need a prefix-sum + monotonic deque instead.
+          monotonic, you need a prefix-sum + monotonic deque instead.
         </Callout>
       </Block>
     </>
@@ -193,7 +193,7 @@ function FastSlow() {
   return (
     <>
       <Lede>
-        Two pointers traversing a linked list (or implicit sequence) at different speeds — slow moves one
+        Two pointers traversing a linked list (or implicit sequence) at different speeds, slow moves one
         step, fast moves two. Floyd&apos;s &quot;tortoise and hare&quot; detects cycles, finds the middle,
         and locates a cycle&apos;s entry, all in O(1) extra space.
       </Lede>
@@ -259,7 +259,7 @@ function FastSlow() {
           The loop guard must be <C>while fast and fast.next</C>. Skip either and a two-step jump
           dereferences <C>None</C> on an even-length or empty list.
         </Callout>
-        <Callout kind="note" title="Hash-set works too — but loses the point">
+        <Callout kind="note" title="Hash-set works too, but loses the point">
           You can store visited nodes in a set for O(n) space. Interviewers reach for fast/slow because
           it&apos;s O(1) space; lead with that.
         </Callout>
@@ -323,7 +323,7 @@ function BinarySearch() {
         />
         <p className="text-ink-dim leading-relaxed mb-1">
           The trickiest variant: a <strong>rotated</strong> sorted array. The array isn&apos;t globally
-          ordered, but after any split at least one half still is — so compare against the{" "}
+          ordered, but after any split at least one half still is, so compare against the{" "}
           <em>sorted</em> half to decide whether the target lives there, and recurse into the right side.
         </p>
         <CodeBlock
@@ -348,7 +348,7 @@ function BinarySearch() {
         />
         <Callout kind="tip" title="Reach for this when you see…">
           a <strong>sorted</strong> array; &quot;find / insert position&quot;; &quot;first / last
-          element satisfying P&quot;; a rotated sorted array; or — the high-value tell —{" "}
+          element satisfying P&quot;; a rotated sorted array; or, the high-value tell,{" "}
           &quot;minimize the maximum&quot; / &quot;maximize the minimum&quot; / &quot;smallest capacity,
           speed, or days such that it works&quot;. If you can write a monotonic <C>feasible(x)</C>, binary
           search the answer in O(log range) checks.
@@ -361,7 +361,7 @@ function BinarySearch() {
             { op: "search sorted array", avg: "O(log n)", avgTone: "good", worst: "O(log n)", worstTone: "good", why: "Range halves each iteration." },
             { op: "search on the answer", avg: "O(log R · C)", avgTone: "good", worst: "O(log R · C)", worstTone: "good", why: "R = value range, C = cost of one feasibility check." },
             { op: "rotated array search", avg: "O(log n)", avgTone: "good", worst: "O(log n)", worstTone: "good", why: "One half is always sorted; decide which." },
-            { op: "space", avg: "O(1)", avgTone: "good", worst: "O(1)", worstTone: "good", why: "Iterative — no recursion stack." },
+            { op: "space", avg: "O(1)", avgTone: "good", worst: "O(1)", worstTone: "good", why: "Iterative, no recursion stack." },
           ]}
         />
       </Block>
@@ -379,7 +379,7 @@ function BinarySearch() {
         </Callout>
         <Callout kind="note" title="Overflow note (not Python)">
           <C>(lo + hi) // 2</C> can overflow in fixed-width languages; the idiom there is{" "}
-          <C>lo + (hi - lo) // 2</C>. Python ints are arbitrary precision, so it&apos;s moot — but say it
+          <C>lo + (hi - lo) // 2</C>. Python ints are arbitrary precision, so it&apos;s moot, but say it
           if asked.
         </Callout>
       </Block>
@@ -393,7 +393,7 @@ function BFS() {
     <>
       <Lede>
         Explore level by level with a <strong>queue</strong>. On an <em>unweighted</em> graph, the first
-        time BFS reaches a node it has found a <strong>shortest path</strong> there — that&apos;s its
+        time BFS reaches a node it has found a <strong>shortest path</strong> there, that&apos;s its
         superpower over DFS. Mark nodes visited <em>when you enqueue them</em>, not when you dequeue.
       </Lede>
 
@@ -435,7 +435,7 @@ def bfs_shortest(start, target, neighbors):
         <Callout kind="tip" title="Reach for this when you see…">
           &quot;shortest path&quot; / &quot;fewest steps / moves&quot; in an <strong>unweighted</strong>{" "}
           graph or grid; &quot;minimum number of … &quot;; &quot;level order&quot; / &quot;by depth&quot;;
-          &quot;nearest&quot; or multi-source spread (rotting oranges, walls-and-gates — seed the queue
+          &quot;nearest&quot; or multi-source spread (rotting oranges, walls-and-gates, seed the queue
           with all sources at once); or word-ladder style state graphs.
         </Callout>
       </Block>
@@ -457,7 +457,7 @@ def bfs_shortest(start, target, neighbors):
           you push it.
         </Callout>
         <Callout kind="trap" title="BFS shortest path needs UNIT weights">
-          With varying edge weights, plain BFS is wrong — use Dijkstra (a heap). With weights in{" "}
+          With varying edge weights, plain BFS is wrong, use Dijkstra (a heap). With weights in{" "}
           <C>{"{0, 1}"}</C> only, use <strong>0-1 BFS</strong> with a deque (push-front for 0, push-back
           for 1).
         </Callout>
@@ -473,7 +473,7 @@ function DFS() {
       <Lede>
         Go deep before wide, via recursion or an explicit stack. DFS shines for &quot;does a path
         exist&quot;, exhaustive exploration, connected components, topological sort, and cycle detection.
-        It does <em>not</em> give shortest paths on its own — that&apos;s BFS&apos;s job.
+        It does <em>not</em> give shortest paths on its own, that&apos;s BFS&apos;s job.
       </Lede>
 
       <Block eyebrow="the template" title="Recursive DFS with a visited set">
@@ -513,7 +513,7 @@ def count_components(n, edges):
                 count += 1; sink(r, c)
     return count
 
-# iterative DFS — avoids recursion-depth limits on big inputs:
+# iterative DFS, avoids recursion-depth limits on big inputs:
 def dfs_iter(start, graph):
     stack, seen = [start], {start}
     while stack:
@@ -534,7 +534,7 @@ def dfs_iter(start, graph):
         <OpTable
           rows={[
             { op: "DFS over graph", avg: "O(V + E)", avgTone: "ok", worst: "O(V + E)", worstTone: "ok", why: "Visit each vertex and edge once." },
-            { op: "recursion stack", avg: "O(V)", avgTone: "ok", worst: "O(V)", worstTone: "ok", why: "Depth of the deepest path — a skewed graph is O(V)." },
+            { op: "recursion stack", avg: "O(V)", avgTone: "ok", worst: "O(V)", worstTone: "ok", why: "Depth of the deepest path, a skewed graph is O(V)." },
             { op: "topological sort", avg: "O(V + E)", avgTone: "ok", worst: "O(V + E)", worstTone: "ok", why: "DFS post-order reversed, or Kahn's in-degree BFS." },
           ]}
         />
@@ -561,7 +561,7 @@ function Backtracking() {
     <>
       <Lede>
         DFS over a tree of <em>choices</em>: pick an option, recurse, then <strong>undo the pick</strong>{" "}
-        and try the next. It enumerates permutations, combinations, subsets, and constraint puzzles — and
+        and try the next. It enumerates permutations, combinations, subsets, and constraint puzzles, and
         the difference between &quot;times out&quot; and &quot;passes&quot; is almost always{" "}
         <strong>pruning</strong> dead branches early.
       </Lede>
@@ -571,7 +571,7 @@ function Backtracking() {
           title="python · the universal backtracking shape"
           code={`def backtrack(path, choices, result):
     if is_complete(path):           # base case: a full solution
-        result.append(path[:])      # COPY — path is mutated after this
+        result.append(path[:])      # COPY, path is mutated after this
         return
     for choice in choices:
         if not valid(path, choice): # prune: skip illegal / redundant branches
@@ -612,20 +612,20 @@ def permutations(nums):             # n! orderings
         </Callout>
       </Block>
 
-      <Block eyebrow="cost model" title="Complexity — exponential, by design">
+      <Block eyebrow="cost model" title="Complexity, exponential, by design">
         <OpTable
           rows={[
             { op: "subsets", avg: "O(n · 2ⁿ)", avgTone: "bad", worst: "O(n · 2ⁿ)", worstTone: "bad", why: "2ⁿ subsets, O(n) to copy each." },
             { op: "permutations", avg: "O(n · n!)", avgTone: "bad", worst: "O(n · n!)", worstTone: "bad", why: "n! orderings, O(n) to copy each." },
             { op: "combinations C(n,k)", avg: "O(k · C(n,k))", avgTone: "bad", worst: "O(k · C(n,k))", worstTone: "bad", why: "One copy per chosen combination." },
-            { op: "N-queens", avg: "—", avgTone: "bad", worst: "O(n!)", worstTone: "bad", why: "Pruning cuts the constant massively, not the class." },
+            { op: "N-queens", avg: "n/a", avgTone: "bad", worst: "O(n!)", worstTone: "bad", why: "Pruning cuts the constant massively, not the class." },
           ]}
         />
       </Block>
 
       <Block eyebrow="tips & traps" title="What trips people up">
         <Callout kind="trap" title="Append a COPY, not the live list">
-          <C>result.append(path)</C> stores a reference that you then mutate with <C>path.pop()</C> —
+          <C>result.append(path)</C> stores a reference that you then mutate with <C>path.pop()</C>,
           every entry ends up identical (usually empty). Use <C>path[:]</C> or <C>list(path)</C>.
         </Callout>
         <Callout kind="trap" title="Deduping needs sort + skip-equal-siblings">
@@ -656,7 +656,7 @@ function DP() {
       <Block eyebrow="the framing" title="State · Transition · Base case">
         <p className="text-ink-dim leading-relaxed mb-1">
           Memoization (top-down): write the recurrence, slap <C>@lru_cache</C> on it. Tabulation
-          (bottom-up): fill a table in dependency order. Same recurrence, same Big-O — tabulation avoids
+          (bottom-up): fill a table in dependency order. Same recurrence, same Big-O, tabulation avoids
           recursion overhead and lets you shrink space by keeping only the last row/few values.
         </p>
         <CodeBlock
@@ -676,7 +676,7 @@ def solve(state):
         </Callout>
       </Block>
 
-      <Block eyebrow="DP atlas · 1D" title="Linear DP — one moving index">
+      <Block eyebrow="DP atlas · 1D" title="Linear DP, one moving index">
         <CodeBlock
           title="python · climbing stairs  &  house robber"
           code={`# Climbing stairs: ways to reach step n taking 1 or 2 at a time.
@@ -702,7 +702,7 @@ def rob(nums):
         />
       </Block>
 
-      <Block eyebrow="DP atlas · 2D grid" title="Grid DP — unique paths">
+      <Block eyebrow="DP atlas · 2D grid" title="Grid DP, unique paths">
         <CodeBlock
           title="python · unique paths (right / down only)"
           code={`# state:  dp[r][c] = number of paths from (0,0) to (r,c)
@@ -718,7 +718,7 @@ def unique_paths(m, n):
         />
       </Block>
 
-      <Block eyebrow="DP atlas · knapsack" title="0/1 vs unbounded — the iteration direction is the whole trick">
+      <Block eyebrow="DP atlas · knapsack" title="0/1 vs unbounded, the iteration direction is the whole trick">
         <CodeBlock
           title="python · 0/1 knapsack (each item at most once)"
           code={`# state:  dp[w] = best value achievable with capacity w
@@ -733,7 +733,7 @@ def knapsack01(weights, values, W):
         />
         <CodeBlock
           title="python · unbounded knapsack / coin change (reuse allowed)"
-          code={`# Coin change — fewest coins to make 'amount' (unlimited supply).
+          code={`# Coin change, fewest coins to make 'amount' (unlimited supply).
 # state:  dp[a] = min coins to make amount a
 # transition:  dp[a] = min(dp[a], dp[a - coin] + 1)
 # base:  dp[0] = 0 ;  dp[a>0] = +inf  (unreachable)
@@ -752,11 +752,11 @@ def coin_change(coins, amount):
         <Callout kind="note" title="Count ways vs min coins">
           For <em>number of ways</em> to make change (order-independent), put the <C>coins</C> loop{" "}
           <strong>outside</strong> the amount loop and use <C>dp[a] += dp[a-coin]</C>. Swapping the loop
-          order there counts ordered sequences instead — a classic subtle bug.
+          order there counts ordered sequences instead, a classic subtle bug.
         </Callout>
       </Block>
 
-      <Block eyebrow="DP atlas · subsequence" title="LIS — and the O(n log n) patience trick">
+      <Block eyebrow="DP atlas · subsequence" title="LIS, and the O(n log n) patience trick">
         <CodeBlock
           title="python · longest increasing subsequence"
           code={`# O(n^2) DP:
@@ -772,7 +772,7 @@ def lis_n2(nums):
                 dp[i] = max(dp[i], dp[j] + 1)
     return max(dp)
 
-# O(n log n) — "patience sorting": tails[k] = smallest tail of an
+# O(n log n), "patience sorting": tails[k] = smallest tail of an
 # increasing subseq of length k+1. Binary-search each value into place.
 from bisect import bisect_left
 def lis_nlogn(nums):
@@ -792,11 +792,11 @@ def lis_nlogn(nums):
         </Callout>
       </Block>
 
-      <Block eyebrow="DP atlas · interval" title="Interval DP — solve by length, split on a midpoint">
+      <Block eyebrow="DP atlas · interval" title="Interval DP, solve by length, split on a midpoint">
         <p className="text-ink-dim leading-relaxed mb-1">
           State is a range <C>dp[i][j]</C>; you iterate over increasing range <strong>length</strong> and,
           inside each range, try every split / last-action point <C>k</C>. Matrix-chain multiplication and
-          burst-balloons share this shape — O(n³): O(n²) ranges × O(n) splits.
+          burst-balloons share this shape, O(n³): O(n²) ranges × O(n) splits.
         </p>
         <CodeBlock
           title="python · matrix-chain multiplication (min scalar mults)"
@@ -837,7 +837,7 @@ def max_coins(nums):
     return dp[0][n - 1]`}
         />
         <Callout kind="tip" title="Interview line">
-          &quot;It&apos;s interval DP — state is a sub-range, I iterate by length so smaller ranges are
+          &quot;It&apos;s interval DP, state is a sub-range, I iterate by length so smaller ranges are
           ready, and for each range I try every split point. O(n³).&quot; For burst balloons, the insight
           is to pick the balloon popped <em>last</em>, not first, so the two sides become independent.
         </Callout>
@@ -870,7 +870,7 @@ function Greedy() {
     <>
       <Lede>
         Make the locally optimal choice at each step and never reconsider. It&apos;s faster and simpler
-        than DP — <em>when it&apos;s valid</em>. The hard part isn&apos;t the code; it&apos;s proving the
+        than DP, <em>when it&apos;s valid</em>. The hard part isn&apos;t the code; it&apos;s proving the
         greedy choice can&apos;t paint you into a corner (an exchange argument or a matroid structure).
       </Lede>
 
@@ -919,12 +919,12 @@ def max_meetings(intervals):
       </Block>
 
       <Block eyebrow="tips & traps" title="What trips people up">
-        <Callout kind="trap" title="Greedy is often WRONG — prove it or use DP">
+        <Callout kind="trap" title="Greedy is often WRONG, prove it or use DP">
           Coin change with arbitrary denominations breaks greedy (it works for canonical systems like US
           coins, not for, say, <C>{"[1, 3, 4]"}</C> making 6). 0/1 knapsack breaks greedy. If you can&apos;t
           give an exchange-argument proof, default to DP and mention you considered greedy.
         </Callout>
-        <Callout kind="trap" title="Sort key matters — finish vs start">
+        <Callout kind="trap" title="Sort key matters, finish vs start">
           Interval scheduling sorts by <strong>end</strong> time; sorting by start (or by length) gives
           wrong answers. The correct key is the heart of the proof, not an afterthought.
         </Callout>
@@ -938,7 +938,7 @@ function Heap() {
   return (
     <>
       <Lede>
-        When you repeatedly need the current min or max — but not a fully sorted order — a heap gives O(1)
+        When you repeatedly need the current min or max, but not a fully sorted order, a heap gives O(1)
         peek and O(log n) push/pop. For <strong>top-K</strong>, keep a heap of size K and you get O(n log
         k) time and O(k) space, beating a full O(n log n) sort.
       </Lede>
@@ -1001,7 +1001,7 @@ def median():
       </Block>
 
       <Block eyebrow="tips & traps" title="What trips people up">
-        <Callout kind="trap" title="heapq is MIN-only — and K-largest wants a MIN-heap">
+        <Callout kind="trap" title="heapq is MIN-only, and K-largest wants a MIN-heap">
           Python has no max-heap; negate values for one. Counter-intuitively, the <em>K largest</em> are
           held in a <strong>min</strong>-heap of size k, so you can cheaply evict the smallest survivor.
           For K smallest, use a max-heap (negate).
@@ -1013,7 +1013,7 @@ def median():
         </Callout>
         <Callout kind="note" title="Quickselect when you don't need them sorted">
           Just the K-th element (not the top K in order)? Quickselect averages O(n). But it&apos;s O(n²)
-          worst case and mutates the array — heaps are the safer interview default.
+          worst case and mutates the array, heaps are the safer interview default.
         </Callout>
       </Block>
     </>
@@ -1027,14 +1027,14 @@ function MonotonicStack() {
       <Lede>
         A stack you keep sorted (increasing or decreasing) by popping elements that violate the order
         before pushing. It answers &quot;next / previous greater / smaller element&quot; for every index in
-        a single O(n) pass — each element is pushed and popped at most once.
+        a single O(n) pass, each element is pushed and popped at most once.
       </Lede>
 
       <Try>
         <MonotonicStackViz />
       </Try>
 
-      <Block eyebrow="the template" title="Next greater element — decreasing stack of indices">
+      <Block eyebrow="the template" title="Next greater element, decreasing stack of indices">
         <CodeBlock
           title="python · next greater element to the right"
           code={`def next_greater(nums):
@@ -1076,12 +1076,12 @@ function MonotonicStack() {
         </div>
         <p className="text-ink-dim leading-relaxed text-sm">
           It <em>looks</em> like O(n²) because of the inner <C>while</C>, but each index is pushed once and
-          popped once across the whole run, so the total pop work is O(n) — amortized linear.
+          popped once across the whole run, so the total pop work is O(n), amortized linear.
         </p>
       </Block>
 
       <Block eyebrow="tips & traps" title="What trips people up">
-        <Callout kind="trap" title="Decreasing vs increasing — and strict vs non-strict">
+        <Callout kind="trap" title="Decreasing vs increasing, and strict vs non-strict">
           &quot;Next greater&quot; ⇒ pop while <C>top &lt; x</C> (a <em>decreasing</em> stack). &quot;Next
           greater-or-equal&quot; flips the comparator to <C>&lt;=</C>. Choose the wrong direction or
           strictness and you solve a different problem. Store <strong>indices</strong>, not values, so you
@@ -1089,7 +1089,7 @@ function MonotonicStack() {
         </Callout>
         <Callout kind="trap" title="Circular arrays: iterate twice">
           For &quot;next greater in a circular array&quot;, loop <C>i</C> over <C>range(2*n)</C> and index
-          with <C>i % n</C>, pushing only on the first pass — that lets wrap-around elements find answers.
+          with <C>i % n</C>, pushing only on the first pass, that lets wrap-around elements find answers.
         </Callout>
         <Callout kind="note" title="A sentinel flushes the stack">
           Appending a 0 (or ∞) at the end forces every remaining stack item to pop and be finalized, so you
@@ -1106,8 +1106,8 @@ function Intervals() {
     <>
       <Lede>
         Problems on ranges <C>[start, end]</C>: merge overlaps, count concurrency, insert, find free gaps.
-        The unlock is almost always the same — <strong>sort by start</strong> (or process start/end events
-        in time order) — after which a single sweep does the work.
+        The unlock is almost always the same, <strong>sort by start</strong> (or process start/end events
+        in time order), after which a single sweep does the work.
       </Lede>
 
       <Block eyebrow="the template" title="Merge overlaps · max concurrency · insert">
@@ -1162,7 +1162,7 @@ function Intervals() {
       <Block eyebrow="cost model" title="Complexity">
         <OpTable
           rows={[
-            { op: "sort", avg: "O(n log n)", avgTone: "bad", worst: "O(n log n)", worstTone: "bad", why: "Dominates everything — the unavoidable cost." },
+            { op: "sort", avg: "O(n log n)", avgTone: "bad", worst: "O(n log n)", worstTone: "bad", why: "Dominates everything, the unavoidable cost." },
             { op: "merge sweep", avg: "O(n)", avgTone: "ok", worst: "O(n)", worstTone: "ok", why: "One pass after sorting." },
             { op: "max concurrency", avg: "O(n log n)", avgTone: "bad", worst: "O(n log n)", worstTone: "bad", why: "Sort starts & ends (or a heap), then sweep." },
             { op: "space", avg: "O(n)", avgTone: "ok", worst: "O(n)", worstTone: "ok", why: "Output / event list." },
@@ -1173,7 +1173,7 @@ function Intervals() {
       <Block eyebrow="tips & traps" title="What trips people up">
         <Callout kind="trap" title="Decide whether touching = overlapping">
           Is <C>[1, 2]</C> and <C>[2, 3]</C> an overlap? Closed intervals say yes (<C>s &lt;= prev_end</C>);
-          half-open say no (<C>s &lt; prev_end</C>). Pin this down with the interviewer before coding — it
+          half-open say no (<C>s &lt; prev_end</C>). Pin this down with the interviewer before coding, it
           flips your comparison.
         </Callout>
         <Callout kind="trap" title="Event ordering at equal timestamps">
@@ -1184,7 +1184,7 @@ function Intervals() {
         </Callout>
         <Callout kind="tip" title="Sort by END for selection, START for merging">
           Merging and concurrency sort by start. &quot;Maximum non-overlapping&quot; / &quot;fewest
-          removals&quot; is the greedy that sorts by <strong>end</strong> — keep the earliest finisher.
+          removals&quot; is the greedy that sorts by <strong>end</strong>, keep the earliest finisher.
           Knowing which key to use is the whole problem.
         </Callout>
       </Block>
@@ -1214,7 +1214,7 @@ export default function InterviewBench() {
       accent={ACCENT}
       eyebrow="Patterns · the HOW"
       title="Interview Bench"
-      subtitle="The handful of patterns that crack most interview problems — each with the tells that point to it, a copy-paste template, and the cost."
+      subtitle="The handful of patterns that crack most interview problems, each with the tells that point to it, a copy-paste template, and the cost."
       topics={TOPICS}
       activeId={active}
       onSelect={setActive}

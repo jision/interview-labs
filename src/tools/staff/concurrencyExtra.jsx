@@ -13,12 +13,12 @@ function ClassicProblems() {
       <Lede>
         A handful of threading puzzles show up again and again: <strong>print-in-order</strong>,{" "}
         <strong>multithreaded FizzBuzz</strong>, and a <strong>bounded blocking queue</strong>. They're
-        not really about the puzzle — they test whether you reach for the <em>right primitive</em> and
+        not really about the puzzle, they test whether you reach for the <em>right primitive</em> and
         can say why. The tell at staff level is naming the invariant each primitive enforces, not just
         getting the output to come out ordered.
       </Lede>
 
-      <Block eyebrow="problem 1" title="Print in order — gate threads with Events">
+      <Block eyebrow="problem 1" title="Print in order, gate threads with Events">
         <p className="text-ink-dim leading-relaxed mb-1">
           Three threads call <code className="font-mono">first()</code>,{" "}
           <code className="font-mono">second()</code>, <code className="font-mono">third()</code> in
@@ -27,7 +27,7 @@ function ClassicProblems() {
           <code className="font-mono">threading.Event</code>. <code className="font-mono">first</code>{" "}
           runs freely then <em>sets</em> a gate; <code className="font-mono">second</code>{" "}
           <em>waits</em> on that gate before running and sets the next; and so on. An Event is the right
-          primitive because the requirement is "block until a thing has happened once" — exactly what{" "}
+          primitive because the requirement is "block until a thing has happened once", exactly what{" "}
           <code className="font-mono">set()</code>/<code className="font-mono">wait()</code> model.
         </p>
         <CodeBlock
@@ -56,13 +56,13 @@ class Foo:
           A <code className="font-mono">Lock</code> models <em>mutual exclusion</em> ("one at a time"),
           but here we want <em>signalling</em> ("wait until X happened"). An{" "}
           <code className="font-mono">Event</code> is a latch: once <code className="font-mono">set()</code>{" "}
-          it stays set, so a late <code className="font-mono">wait()</code> returns immediately — no risk
-          of missing the signal. That edge — set before the waiter even arrives — is exactly where naive
+          it stays set, so a late <code className="font-mono">wait()</code> returns immediately, no risk
+          of missing the signal. That edge, set before the waiter even arrives, is exactly where naive
           lock/condition solutions deadlock.
         </Callout>
       </Block>
 
-      <Block eyebrow="problem 2" title="Multithreaded FizzBuzz — Condition variables">
+      <Block eyebrow="problem 2" title="Multithreaded FizzBuzz, Condition variables">
         <p className="text-ink-dim leading-relaxed mb-1">
           Four threads share a counter 1…n: one prints "fizz" (÷3), one "buzz" (÷5), one "fizzbuzz"
           (÷15), one prints the number otherwise. Only the thread whose turn it is may print. This is a{" "}
@@ -107,7 +107,7 @@ class FizzBuzz:
         />
         <Callout kind="trap" title="Always wait in a while/wait_for loop, never a bare if">
           A Condition can suffer <strong>spurious wakeups</strong>, and{" "}
-          <code className="font-mono">notify_all</code> wakes <em>every</em> waiter — but only one
+          <code className="font-mono">notify_all</code> wakes <em>every</em> waiter, but only one
           predicate is true. Each thread must <em>re-check</em> its condition after waking, which is what{" "}
           <code className="font-mono">wait_for(pred)</code> does (it loops on{" "}
           <code className="font-mono">while not pred(): wait()</code> for you). Replacing it with a single{" "}
@@ -118,7 +118,7 @@ class FizzBuzz:
         </Callout>
       </Block>
 
-      <Block eyebrow="problem 3" title="Bounded blocking queue — the building block">
+      <Block eyebrow="problem 3" title="Bounded blocking queue, the building block">
         <p className="text-ink-dim leading-relaxed mb-1">
           Implement a thread-safe queue with a fixed capacity:{" "}
           <code className="font-mono">enqueue</code> blocks when full,{" "}
@@ -156,21 +156,21 @@ class BoundedBlockingQueue:
         />
         <Callout kind="note" title="In real Python, you'd just use queue.Queue">
           The standard library's <code className="font-mono">queue.Queue(maxsize=cap)</code> already is a
-          bounded blocking queue — <code className="font-mono">put()</code> blocks when full,{" "}
+          bounded blocking queue, <code className="font-mono">put()</code> blocks when full,{" "}
           <code className="font-mono">get()</code> blocks when empty, all locking handled. Hand-rolling it
-          with a Condition is the <em>interview</em> exercise; in production you import it. Knowing both —
-          "I'd use <code className="font-mono">queue.Queue</code>, but here's how it works underneath" — is
+          with a Condition is the <em>interview</em> exercise; in production you import it. Knowing both,
+          "I'd use <code className="font-mono">queue.Queue</code>, but here's how it works underneath", is
           the staff signal.
         </Callout>
       </Block>
 
       <Block eyebrow="cheat sheet" title="Which primitive for which shape">
         <OpTable
-          cols={["Problem shape", "Primitive", "—", "Why it fits"]}
+          cols={["Problem shape", "Primitive", "", "Why it fits"]}
           rows={[
             { op: "Run X only after Y happened once", avg: "Event", avgTone: "good", why: "A latch: set() once, every present-or-future wait() passes. No missed-signal race." },
             { op: "Take turns / wait on a predicate", avg: "Condition", avgTone: "good", why: "wait_for(pred) sleeps until a shared predicate holds, re-checking on every notify." },
-            { op: "Protect shared mutable state", avg: "Lock", avgTone: "good", why: "Mutual exclusion — exactly one thread in the critical section." },
+            { op: "Protect shared mutable state", avg: "Lock", avgTone: "good", why: "Mutual exclusion, exactly one thread in the critical section." },
             { op: "Cap concurrent holders to k", avg: "Semaphore(k)", avgTone: "ok", why: "A counter that blocks the (k+1)th acquirer until someone releases." },
           ]}
         />
@@ -189,7 +189,7 @@ function ProducerConsumer() {
         their speeds. The textbook solution uses <strong>two counting semaphores plus a mutex</strong>:{" "}
         <code className="font-mono">empty</code> (starts at N, the free slots) and{" "}
         <code className="font-mono">full</code> (starts at 0, the filled slots). The semaphores supply{" "}
-        <strong>backpressure</strong> for free — block instead of busy-wait when there's nothing to do.
+        <strong>backpressure</strong> for free, block instead of busy-wait when there's nothing to do.
       </Lede>
 
       <Try><ProducerConsumerViz /></Try>
@@ -212,8 +212,8 @@ from collections import deque
 
 N = 5
 buffer = deque()
-empty = threading.Semaphore(N)   # free slots — starts full of permits
-full  = threading.Semaphore(0)   # filled slots — starts empty
+empty = threading.Semaphore(N)   # free slots, starts full of permits
+full  = threading.Semaphore(0)   # filled slots, starts empty
 mutex = threading.Lock()         # guards the buffer itself
 
 def producer(items):
@@ -231,9 +231,9 @@ def consumer():
         empty.release()          # signal: one more free slot
         handle(item)`}
         />
-        <Callout kind="trap" title="Acquire the semaphore BEFORE the mutex — never the reverse">
+        <Callout kind="trap" title="Acquire the semaphore BEFORE the mutex, never the reverse">
           If a thread grabs <code className="font-mono">mutex</code> first and <em>then</em> blocks on a
-          full <code className="font-mono">empty.acquire()</code>, it holds the lock while asleep — no one
+          full <code className="font-mono">empty.acquire()</code>, it holds the lock while asleep, no one
           can drain the buffer, and you've deadlocked. The order is always{" "}
           <strong>count semaphore → mutex → release</strong>. The semaphore is the wait; the mutex is the
           brief mutation. Hold the mutex for as little as possible.
@@ -242,7 +242,7 @@ def consumer():
 
       <Block eyebrow="the easy version" title="queue.Queue gives you all of this">
         <p className="text-ink-dim leading-relaxed mb-1">
-          In real Python you don't wire semaphores by hand —{" "}
+          In real Python you don't wire semaphores by hand,{" "}
           <code className="font-mono">queue.Queue(maxsize=N)</code> <em>is</em> a bounded buffer with the
           locking baked in. <code className="font-mono">put()</code> blocks on a full queue,{" "}
           <code className="font-mono">get()</code> blocks on an empty one, and{" "}
@@ -280,7 +280,7 @@ q.join()                         # wait until every item is task_done()`}
         <Callout kind="tip" title="What backpressure buys you">
           A <strong>bounded</strong> buffer makes a fast producer <em>wait</em> when consumers fall
           behind, instead of allocating unbounded memory until the process OOMs. That blocking{" "}
-          <code className="font-mono">put()</code> is backpressure — it propagates "slow down" upstream
+          <code className="font-mono">put()</code> is backpressure, it propagates "slow down" upstream
           for free. The reflexive interview answer of an <em>unbounded</em> queue quietly removes the
           safety valve: under sustained overload it grows without limit and the whole service falls over.
         </Callout>
@@ -302,7 +302,7 @@ function Deadlock() {
   return (
     <>
       <Lede>
-        A <strong>deadlock</strong> is a set of threads each waiting forever on a resource another holds —
+        A <strong>deadlock</strong> is a set of threads each waiting forever on a resource another holds,
         nobody makes progress. It can only occur when <em>all four</em> Coffman conditions hold at once,
         which is the gift in disguise: <strong>break any single one and deadlock becomes impossible</strong>.
         Dining philosophers is the canonical demonstration, and the fix is almost always to destroy{" "}
@@ -316,7 +316,7 @@ function Deadlock() {
         </p>
         <div className="grid sm:grid-cols-2 gap-2.5 mb-2">
           {[
-            ["1 · Mutual exclusion", "a resource is held exclusively — only one thread can own it at a time."],
+            ["1 · Mutual exclusion", "a resource is held exclusively, only one thread can own it at a time."],
             ["2 · Hold and wait", "a thread keeps the resources it has while blocking to acquire more."],
             ["3 · No preemption", "a resource can't be forcibly taken away; only its holder may release it."],
             ["4 · Circular wait", "a cycle of threads exists, each waiting on a resource the next one holds."],
@@ -341,11 +341,11 @@ function Deadlock() {
         </Callout>
       </Block>
 
-      <Block eyebrow="the setup" title="Dining philosophers — how it deadlocks">
+      <Block eyebrow="the setup" title="Dining philosophers, how it deadlocks">
         <p className="text-ink-dim leading-relaxed mb-1">
           Five philosophers sit around a table with five forks between them; each needs <em>both</em>{" "}
           adjacent forks to eat. The naive rule "pick up your left fork, then your right" deadlocks the
-          instant <strong>every philosopher grabs their left fork simultaneously</strong> — now all five
+          instant <strong>every philosopher grabs their left fork simultaneously</strong>, now all five
           hold one fork and wait forever for a right fork that will never be freed. That's all four Coffman
           conditions at once, with a perfect circular wait around the table.
         </p>
@@ -366,11 +366,11 @@ def philosopher(i):
         />
       </Block>
 
-      <Block eyebrow="the fix" title="Resource hierarchy — a global lock order">
+      <Block eyebrow="the fix" title="Resource hierarchy, a global lock order">
         <p className="text-ink-dim leading-relaxed mb-1">
           Number the forks 0–4 and require every philosopher to acquire the{" "}
           <strong>lower-numbered fork first</strong>. Now the last philosopher (between fork 4 and fork 0)
-          reaches for fork 0 before fork 4 — reversed from everyone else. With a consistent global order,{" "}
+          reaches for fork 0 before fork 4, reversed from everyone else. With a consistent global order,{" "}
           <strong>no cycle can form</strong>, so circular wait is impossible and the table never
           deadlocks. This is the same trick as "always lock the lower-id account first" in a bank
           transfer.
@@ -402,18 +402,18 @@ def philosopher(i):
 
       <Block eyebrow="don't confuse them" title="Deadlock vs livelock vs starvation">
         <OpTable
-          cols={["Failure", "What happens", "—", "Tell / fix"]}
+          cols={["Failure", "What happens", "", "Tell / fix"]}
           rows={[
             { op: "Deadlock", avg: "frozen", avgTone: "bad", why: "Threads block forever waiting on each other; CPU idle. Fix: break a Coffman condition (lock ordering)." },
-            { op: "Livelock", avg: "busy, no progress", avgTone: "bad", why: "Threads keep reacting to each other and retrying — like two people sidestepping in a hallway. CPU busy, nothing done. Fix: add randomized backoff." },
+            { op: "Livelock", avg: "busy, no progress", avgTone: "bad", why: "Threads keep reacting to each other and retrying, like two people sidestepping in a hallway. CPU busy, nothing done. Fix: add randomized backoff." },
             { op: "Starvation", avg: "one thread blocked", avgTone: "ok", why: "The system progresses but one thread never gets the resource (e.g. a writer starved by constant readers). Fix: fairness / aging / a fair lock." },
           ]}
         />
         <Callout kind="trap" title="Livelock isn't deadlock">
           In a deadlock everyone is <em>blocked</em> (asleep, CPU idle). In a livelock everyone is{" "}
-          <em>running</em> — retrying, backing off, retrying — burning CPU while making zero progress.
+          <em>running</em>, retrying, backing off, retrying, burning CPU while making zero progress.
           Detection differs: a deadlock shows threads parked on locks; a livelock shows 100% CPU and no
-          forward movement. The classic livelock fix is the same one Ethernet uses for collisions —{" "}
+          forward movement. The classic livelock fix is the same one Ethernet uses for collisions,{" "}
           <strong>randomized exponential backoff</strong> so the symmetry breaks.
         </Callout>
       </Block>
@@ -426,27 +426,27 @@ function AsyncModels() {
   return (
     <>
       <Lede>
-        "Make this faster — threads, async, or processes?" The right answer hinges on one question:{" "}
+        "Make this faster, threads, async, or processes?" The right answer hinges on one question:{" "}
         <strong>is the work CPU-bound or I/O-bound?</strong> In CPython the{" "}
         <strong>GIL serializes Python bytecode</strong>, so threads give you <em>no</em> speedup on
-        CPU-bound work — but they shine for I/O, asyncio shines harder for high-concurrency I/O, and only{" "}
+        CPU-bound work, but they shine for I/O, asyncio shines harder for high-concurrency I/O, and only{" "}
         <code className="font-mono">multiprocessing</code> gives true CPU parallelism.
       </Lede>
 
       <Block eyebrow="the deciding axis" title="CPU-bound vs I/O-bound">
         <p className="text-ink-dim leading-relaxed mb-1">
-          <strong>CPU-bound</strong> work keeps a core busy computing — hashing, image resizing, number
+          <strong>CPU-bound</strong> work keeps a core busy computing, hashing, image resizing, number
           crunching. The bottleneck is cycles, so the only way to go faster is to use{" "}
-          <em>more cores</em>. <strong>I/O-bound</strong> work spends most of its time <em>waiting</em> —
+          <em>more cores</em>. <strong>I/O-bound</strong> work spends most of its time <em>waiting</em>,
           for a network response, a disk read, a database query. The bottleneck is latency, not the CPU,
           so the win is overlapping many waits, which needs concurrency but not parallelism.
         </p>
         <Callout kind="note" title="The GIL, stated correctly">
           CPython's Global Interpreter Lock lets only one thread execute Python bytecode at a time. So for
-          <strong> CPU-bound Python, threads run effectively serially</strong> — no speedup, just
+          <strong> CPU-bound Python, threads run effectively serially</strong>, no speedup, just
           time-slicing one core (plus switch overhead). Crucially, the GIL is{" "}
           <em>released during blocking I/O</em> (and inside many C extensions like NumPy), so threads{" "}
-          <strong>do</strong> help I/O-bound work — one thread waits on the socket while another runs.
+          <strong>do</strong> help I/O-bound work, one thread waits on the socket while another runs.
           Python 3.13+ ships an experimental free-threaded (no-GIL) build, but the GIL is still the
           default to reason about in an interview.
         </Callout>
@@ -456,7 +456,7 @@ function AsyncModels() {
         <OpTable
           cols={["Model", "Parallelism?", "Best for", "Cost / catch"]}
           rows={[
-            { op: "threading", avg: "no (GIL)", avgTone: "ok", worst: "I/O-bound", worstTone: "good", why: "Pre-emptive OS threads, shared memory. GIL blocks CPU parallelism; great for blocking I/O. Needs locks — race conditions are easy." },
+            { op: "threading", avg: "no (GIL)", avgTone: "ok", worst: "I/O-bound", worstTone: "good", why: "Pre-emptive OS threads, shared memory. GIL blocks CPU parallelism; great for blocking I/O. Needs locks, race conditions are easy." },
             { op: "asyncio", avg: "no (1 thread)", avgTone: "ok", worst: "high-concurrency I/O", worstTone: "good", why: "Cooperative event loop, single thread. Scales to tens of thousands of sockets cheaply. Needs async-aware libs; one blocking call stalls everything." },
             { op: "multiprocessing", avg: "YES (N cores)", avgTone: "good", worst: "CPU-bound", worstTone: "good", why: "Separate processes, separate memory, own GIL each → true parallelism. Cost: IPC/pickling overhead, no shared state, heavier to spawn." },
           ]}
@@ -465,7 +465,7 @@ function AsyncModels() {
           <strong>CPU-bound → multiprocessing</strong> (or a C extension / native code that drops the
           GIL). <strong>I/O-bound, modest concurrency → threading.</strong>{" "}
           <strong>I/O-bound, massive concurrency (10k+ connections) → asyncio.</strong> If you say "use
-          threads to speed up a tight numeric loop," that's the wrong answer — the GIL means it won't go
+          threads to speed up a tight numeric loop," that's the wrong answer, the GIL means it won't go
           faster.
         </Callout>
       </Block>
@@ -475,7 +475,7 @@ function AsyncModels() {
           <code className="font-mono">asyncio</code> runs one thread with an <strong>event loop</strong>.
           A coroutine runs until it hits <code className="font-mono">await</code> on something that would
           block (a socket, a sleep); it <em>yields control</em> back to the loop, which runs another ready
-          coroutine. No OS thread per connection, no lock contention, no GIL fight — just one thread
+          coroutine. No OS thread per connection, no lock contention, no GIL fight, just one thread
           juggling thousands of paused waits. It's <strong>cooperative</strong>: a coroutine that never{" "}
           <code className="font-mono">await</code>s hogs the loop.
         </p>
@@ -488,7 +488,7 @@ async def fetch(name, delay):
     return f"{name} done"
 
 async def main():
-    # all three "requests" overlap on ONE thread — total ~3s, not 6s
+    # all three "requests" overlap on ONE thread, total ~3s, not 6s
     results = await asyncio.gather(
         fetch("a", 3),
         fetch("b", 2),
@@ -499,9 +499,9 @@ async def main():
 asyncio.run(main())`}
         />
         <Callout kind="trap" title="Never block the event loop">
-          The cardinal asyncio sin is calling a <em>blocking</em> function — a synchronous{" "}
+          The cardinal asyncio sin is calling a <em>blocking</em> function, a synchronous{" "}
           <code className="font-mono">requests.get()</code>, a CPU-heavy loop,{" "}
-          <code className="font-mono">time.sleep()</code> — inside a coroutine. There's only one thread,
+          <code className="font-mono">time.sleep()</code>, inside a coroutine. There's only one thread,
           so it freezes <em>every</em> other task. Use async-native libraries (e.g.{" "}
           <code className="font-mono">aiohttp</code>), or offload blocking/CPU work to a thread or process
           pool via <code className="font-mono">loop.run_in_executor</code> /{" "}
@@ -509,10 +509,10 @@ asyncio.run(main())`}
         </Callout>
       </Block>
 
-      <Block eyebrow="the trap" title="multiprocessing — true parallelism, separate memory">
+      <Block eyebrow="the trap" title="multiprocessing, true parallelism, separate memory">
         <p className="text-ink-dim leading-relaxed mb-1">
           Each process has its <em>own</em> Python interpreter and its <em>own</em> GIL, so N processes
-          genuinely run on N cores — the only way to parallelize CPU-bound Python. The price is{" "}
+          genuinely run on N cores, the only way to parallelize CPU-bound Python. The price is{" "}
           <strong>no shared memory</strong>: arguments and results are <code className="font-mono">pickle</code>d
           across the process boundary, spawning is heavier than a thread, and you coordinate through
           queues/pipes rather than shared variables.
@@ -526,7 +526,7 @@ def heavy(n):                 # CPU-bound: pure computation
 
 if __name__ == "__main__":    # required guard on spawn-based platforms
     with Pool(processes=4) as pool:
-        # runs across 4 cores in parallel — real speedup, GIL not in the way
+        # runs across 4 cores in parallel, real speedup, GIL not in the way
         results = pool.map(heavy, [10**6] * 8)
     print(sum(results))`}
         />

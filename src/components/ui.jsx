@@ -1,6 +1,6 @@
 import React from "react";
 
-/* Tiny classnames joiner — no dependency needed. */
+/* Tiny classnames joiner, no dependency needed. */
 export function cx(...parts) {
   return parts.filter(Boolean).join(" ");
 }
@@ -51,7 +51,7 @@ export function Tag({ children, color }) {
   );
 }
 
-/* ── Complexity badge — colored by how good the Big-O is ──────── */
+/* ── Complexity badge, colored by how good the Big-O is ──────── */
 const COMPLEXITY_TONE = {
   good: "#4ade80", // O(1), O(log n)
   ok: "#fbbf24", // O(n)
@@ -74,7 +74,7 @@ export function ComplexityTag({ children, tone = "ok", label }) {
   );
 }
 
-/* ── Callout — tip / warn / trap ──────────────────────────────── */
+/* ── Callout, tip / warn / trap ──────────────────────────────── */
 const CALLOUT = {
   tip: { color: "var(--color-tip)", label: "TIP", icon: "💡" },
   warn: { color: "var(--color-warn)", label: "WATCH OUT", icon: "⚠️" },
@@ -103,7 +103,7 @@ export function Callout({ kind = "tip", title, children }) {
   );
 }
 
-/* ── Code block — monospace with light Python token coloring ──── */
+/* ── Code block, monospace with light Python token coloring ──── */
 const PY_KEYWORDS =
   /\b(def|return|if|elif|else|for|while|in|not|and|or|None|True|False|class|self|import|from|as|with|try|except|raise|yield|lambda|is|break|continue|pass|global)\b/g;
 

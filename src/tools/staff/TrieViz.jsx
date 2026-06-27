@@ -80,7 +80,7 @@ export default function TrieViz() {
         </span>
         <span className="font-mono text-xs text-ink-faint">
           {dead
-            ? "no node — dead end"
+            ? "no node, dead end"
             : `walked ${depth} edge${depth === 1 ? "" : "s"} → O(L)`}
         </span>
       </div>
@@ -116,13 +116,13 @@ export default function TrieViz() {
           </div>
         ) : (
           <span className="text-sm text-ink-faint">
-            no words with this prefix — autocomplete shows nothing.
+            no words with this prefix, autocomplete shows nothing.
           </span>
         )}
       </div>
 
       <p className="text-sm text-ink-dim leading-relaxed min-h-[2.5rem] mt-3">
-        Finding the prefix node costs <span className="text-ink">O(L)</span> in the prefix length L —
+        Finding the prefix node costs <span className="text-ink">O(L)</span> in the prefix length L,
         independent of how many words are stored. Then a DFS under that node lists every completion.
       </p>
     </div>

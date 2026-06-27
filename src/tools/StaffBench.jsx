@@ -7,7 +7,7 @@ import TokenBucketViz from "./staff/TokenBucketViz.jsx";
 import TrieViz from "./staff/TrieViz.jsx";
 import RaceConditionViz from "./staff/RaceConditionViz.jsx";
 import EstimatorViz from "./staff/EstimatorViz.jsx";
-// Expansion modules — each exports a TOPICS array + a CONTENT map.
+// Expansion modules, each exports a TOPICS array + a CONTENT map.
 import { EXTRA_DESIGN_TOPICS, EXTRA_DESIGN_CONTENT } from "./staff/designExtra.jsx";
 import { CONCURRENCY_EXTRA_TOPICS, CONCURRENCY_EXTRA_CONTENT } from "./staff/concurrencyExtra.jsx";
 import { SYSTEM_TOPICS, SYSTEM_CONTENT } from "./staff/systemDesign.jsx";
@@ -50,14 +50,14 @@ function Lru() {
           a value fast but can't tell you what's least-recently-used. A list alone keeps order but
           searching it is O(n). Combine them: the map stores{" "}
           <code className="font-mono">key → node</code>, and the node lives in a doubly linked list
-          ordered most-recent → least-recent. On a hit you unlink the node and splice it to the front —
+          ordered most-recent → least-recent. On a hit you unlink the node and splice it to the front,
           O(1) because a doubly linked node knows both neighbors. On overflow you drop the tail, the
           least-recently-used entry.
         </p>
-        <Callout kind="trap" title="A get() is a use — refresh recency">
+        <Callout kind="trap" title="A get() is a use, refresh recency">
           The most common LRU bug: treating <code className="font-mono">get</code> as read-only. A
           successful read <em>counts as a use</em> and must move the key to most-recent. Otherwise you
-          evict items people are actively reading. (And it's LRU, not MRU — you evict the{" "}
+          evict items people are actively reading. (And it's LRU, not MRU, you evict the{" "}
           <em>least</em> recently used, the tail.)
         </Callout>
         <CodeBlock
@@ -83,7 +83,7 @@ class LRUCache:
             self.cache.popitem(last=False)   # evict least-recently-used (head)`}
         />
         <Callout kind="tip" title="Know both versions">
-          <code className="font-mono">OrderedDict</code> is the right interview answer in Python — its{" "}
+          <code className="font-mono">OrderedDict</code> is the right interview answer in Python, its{" "}
           <code className="font-mono">move_to_end</code> and{" "}
           <code className="font-mono">popitem(last=False)</code> are exactly the LRU primitives. But be
           ready to hand-roll the <strong>dict + doubly linked list</strong> with a dummy head and tail
@@ -105,11 +105,11 @@ class LRUCache:
 
       <Block eyebrow="judgment" title="When LRU is the wrong policy">
         <Callout kind="note" title="Eviction policy is a real choice">
-          LRU assumes the recent past predicts the near future — great for general workloads. But{" "}
+          LRU assumes the recent past predicts the near future, great for general workloads. But{" "}
           <strong>LFU</strong> (least-frequently-used; LeetCode 460) beats it when a few keys are hot forever, and a
           one-off scan of cold data will flush an LRU cache (cache pollution). Production caches like
-          Redis offer LRU, LFU, and TTL. Naming the alternative — "I'd start with LRU, switch to LFU if
-          the access pattern is skewed" — is the staff-level signal.
+          Redis offer LRU, LFU, and TTL. Naming the alternative, "I'd start with LRU, switch to LFU if
+          the access pattern is skewed", is the staff-level signal.
         </Callout>
       </Block>
     </>
@@ -123,7 +123,7 @@ function RateLimiter() {
       <Lede>
         "Allow at most R requests per second per user." The default answer is a{" "}
         <strong>token bucket</strong>: a bucket holds up to C tokens, refills at r tokens/second, and
-        each request spends one token — or is denied if the bucket is empty. It allows short bursts (up
+        each request spends one token, or is denied if the bucket is empty. It allows short bursts (up
         to C) while bounding the long-run rate to r.
       </Lede>
 
@@ -135,7 +135,7 @@ function RateLimiter() {
           <code className="font-mono">tokens</code> and the{" "}
           <code className="font-mono">last_refill</code> time. On each request you lazily add{" "}
           <code className="font-mono">elapsed × r</code> tokens (capped at C), then{" "}
-          <strong>allow iff tokens ≥ 1</strong> and decrement. No background thread needed — you refill
+          <strong>allow iff tokens ≥ 1</strong> and decrement. No background thread needed, you refill
           on read. Capacity C is your burst allowance; rate r is your steady-state limit.
         </p>
         <CodeBlock
@@ -168,17 +168,17 @@ class TokenBucket:
 
       <Block eyebrow="the menu" title="Four limiters, four trade-offs">
         <OpTable
-          cols={["Algorithm", "Shape", "—", "Behaviour"]}
+          cols={["Algorithm", "Shape", "", "Behaviour"]}
           rows={[
             { op: "Token bucket", avg: "bursty", avgTone: "good", why: "Smooth long-run rate, lets bursts through up to C. The usual default." },
-            { op: "Leaky bucket", avg: "smoothed", avgTone: "ok", why: "Requests drain at a fixed rate (a FIFO queue) — output is perfectly even, but adds latency and can drop on overflow." },
+            { op: "Leaky bucket", avg: "smoothed", avgTone: "ok", why: "Requests drain at a fixed rate (a FIFO queue), output is perfectly even, but adds latency and can drop on overflow." },
             { op: "Fixed window", avg: "spiky", avgTone: "bad", why: "Count per clock-aligned window. Simple, but allows ~2× the limit at a window boundary." },
-            { op: "Sliding window", avg: "accurate", avgTone: "good", why: "Sliding-log or weighted-window fixes the boundary spike — at higher memory / compute cost." },
+            { op: "Sliding window", avg: "accurate", avgTone: "good", why: "Sliding-log or weighted-window fixes the boundary spike, at higher memory / compute cost." },
           ]}
         />
         <Callout kind="trap" title="The fixed-window boundary bug">
           Fixed window counts requests in clock-aligned buckets (e.g. per minute). A client can fire R
-          requests at 0:59 and another R at 1:00 — <strong>2R requests in one second</strong>, straddling
+          requests at 0:59 and another R at 1:00, <strong>2R requests in one second</strong>, straddling
           the boundary. Sliding-window log or a weighted sliding window closes this gap; that's the
           follow-up interviewers fish for.
         </Callout>
@@ -195,7 +195,7 @@ class TokenBucket:
           A token bucket in memory limits one process. Behind a load balancer with 10 nodes, each
           allowing R means the user gets up to 10R. Real systems centralize the counter (Redis with an
           atomic <code className="font-mono">INCR</code> / Lua script) or accept approximate limiting
-          per node. Mention this — it's the difference between a toy and a system.
+          per node. Mention this, it's the difference between a toy and a system.
         </Callout>
       </Block>
     </>
@@ -210,7 +210,7 @@ function TrieTopic() {
         "Build autocomplete for a search box." (LeetCode 208; 211 for wildcard search) A <strong>trie</strong> (prefix tree) stores words by
         shared prefixes: each edge is a character, each path from the root spells a prefix. Finding all
         completions of a prefix is <strong>O(L)</strong> to walk the prefix plus the cost of listing the
-        matches — independent of how many words you've stored.
+        matches, independent of how many words you've stored.
       </Lede>
 
       <Try><TrieViz /></Try>
@@ -218,7 +218,7 @@ function TrieTopic() {
       <Block eyebrow="under the hood" title="One node per prefix, not per word">
         <p className="text-ink-dim leading-relaxed mb-1">
           "car", "card", and "care" share the path <code className="font-mono">c → a → r</code>; the
-          trie stores that path once. To check a prefix you walk one edge per character — O(L), where L
+          trie stores that path once. To check a prefix you walk one edge per character, O(L), where L
           is the prefix length, with <em>no dependence on the dictionary size</em>. An{" "}
           <code className="font-mono">is_end</code> flag marks where a complete word ends, so "do" and
           "dot" can both live on the same branch. To autocomplete, walk to the prefix node, then DFS
@@ -272,19 +272,19 @@ class Trie:
             { op: "insert(word)", avg: "O(L)", avgTone: "good", worst: "O(L)", worstTone: "good", why: "One node per character; L = word length." },
             { op: "search(word)", avg: "O(L)", avgTone: "good", worst: "O(L)", worstTone: "good", why: "Walk the path; no scan of other words." },
             { op: "starts_with(prefix)", avg: "O(L)", avgTone: "good", worst: "O(L)", worstTone: "good", why: "The trie's whole reason to exist." },
-            { op: "autocomplete(prefix)", avg: "O(L + total length of all completions)", avgTone: "ok", worst: "O(L + total length of all completions)", worstTone: "ok", why: "Walk the prefix (O(L)), then DFS emits every character of every completion — O(total length of all matches), not the match count." },
+            { op: "autocomplete(prefix)", avg: "O(L + total length of all completions)", avgTone: "ok", worst: "O(L + total length of all completions)", worstTone: "ok", why: "Walk the prefix (O(L)), then DFS emits every character of every completion, O(total length of all matches), not the match count." },
           ]}
         />
       </Block>
 
-      <Block eyebrow="judgment" title="Trie vs hash set — and when not to bother">
+      <Block eyebrow="judgment" title="Trie vs hash set, and when not to bother">
         <Callout kind="tip" title="Reach for a trie when prefixes matter">
-          A hash set gives O(1) <em>exact</em> membership but knows nothing about prefixes — "all words
+          A hash set gives O(1) <em>exact</em> membership but knows nothing about prefixes, "all words
           starting with 'ca'" would be a full scan. Use a trie for prefix search, autocomplete, longest
           common prefix, and word-break style problems.
         </Callout>
         <Callout kind="warn" title="Memory is the catch">
-          A trie can use a lot of pointers — one node per character of unshared prefix. At scale,
+          A trie can use a lot of pointers, one node per character of unshared prefix. At scale,
           production systems compress it (a radix / Patricia trie merges single-child chains) or rank
           completions by popularity. For ranked autocomplete you'd store the top-k under each node, not
           a raw DFS.
@@ -301,7 +301,7 @@ function Concurrency() {
       <Lede>
         Concurrency rounds test whether you can reason about <em>shared mutable state</em>. The core
         problem: when two threads touch the same data without coordination, operations interleave and
-        results become non-deterministic — a <strong>race condition</strong>. Below, watch two threads
+        results become non-deterministic, a <strong>race condition</strong>. Below, watch two threads
         each do <code className="text-ink font-mono">count += 1</code> three times.
       </Lede>
 
@@ -311,7 +311,7 @@ function Concurrency() {
         <p className="text-ink-dim leading-relaxed mb-1">
           That innocent line is three operations: <strong>read</strong> count into a register,{" "}
           <strong>add</strong> one, <strong>write</strong> it back. If thread A reads 0, thread B reads
-          0, both add one, both write 1 — two increments produced a single +1. That's a{" "}
+          0, both add one, both write 1, two increments produced a single +1. That's a{" "}
           <strong>lost update</strong>. A <strong>mutex</strong> (lock) makes the read-add-write a single
           atomic critical section, so the final value is always correct. Toggle the lock in the demo and
           run it.
@@ -326,7 +326,7 @@ lock = threading.Lock()
 def worker():
     global count
     for _ in range(100_000):
-        with lock:          # critical section — only one thread inside
+        with lock:          # critical section, only one thread inside
             count += 1      # now atomic: read-add-write can't interleave
 # without the lock, the final count is < 200_000 (lost updates)`}
         />
@@ -334,10 +334,10 @@ def worker():
 
       <Block eyebrow="the toolbox" title="Synchronization primitives">
         <OpTable
-          cols={["Primitive", "Guarantees", "—", "Use it for"]}
+          cols={["Primitive", "Guarantees", "", "Use it for"]}
           rows={[
             { op: "Mutex / Lock", avg: "exclusive", avgTone: "good", why: "One thread in the critical section at a time. The default for protecting shared state." },
-            { op: "Semaphore(k)", avg: "≤ k holders", avgTone: "good", why: "A counter allowing up to k concurrent holders — e.g. a pool of k DB connections." },
+            { op: "Semaphore(k)", avg: "≤ k holders", avgTone: "good", why: "A counter allowing up to k concurrent holders, e.g. a pool of k DB connections." },
             { op: "RW lock", avg: "many R / one W", avgTone: "ok", why: "Multiple readers OR one writer. Wins on read-heavy data; risks writer starvation." },
             { op: "Condition var", avg: "wait / notify", avgTone: "ok", why: "Sleep until a predicate holds (queue non-empty). Backs producer–consumer." },
           ]}
@@ -352,13 +352,13 @@ def worker():
 
       <Block eyebrow="the classic failure" title="Deadlock & the 4 Coffman conditions">
         <p className="text-ink-dim leading-relaxed mb-2">
-          A <strong>deadlock</strong> is two-or-more threads each waiting on a lock the other holds —
+          A <strong>deadlock</strong> is two-or-more threads each waiting on a lock the other holds,
           forever. It needs <em>all four</em> Coffman conditions at once; break any one and deadlock is
           impossible:
         </p>
         <div className="grid sm:grid-cols-2 gap-2.5 mb-2">
           {[
-            ["1. Mutual exclusion", "a resource is held exclusively — only one thread at a time."],
+            ["1. Mutual exclusion", "a resource is held exclusively, only one thread at a time."],
             ["2. Hold and wait", "a thread holds one resource while waiting for another."],
             ["3. No preemption", "a resource can't be forcibly taken; only the holder releases it."],
             ["4. Circular wait", "a cycle of threads, each waiting on the next's resource."],
@@ -374,20 +374,20 @@ def worker():
           ))}
         </div>
         <Callout kind="tip" title="The standard fix: kill circular wait">
-          Impose a <strong>global lock ordering</strong> — every thread acquires locks in the same total
+          Impose a <strong>global lock ordering</strong>, every thread acquires locks in the same total
           order (e.g. always lock the lower-id account first). No cycle can form, so no deadlock. This is
           the answer to <strong>dining philosophers</strong>: make one philosopher pick up forks in the
           opposite order (or use a waiter / semaphore that admits at most N−1 diners).
         </Callout>
       </Block>
 
-      <Block eyebrow="python specifics" title="The GIL — what it does and does NOT protect">
+      <Block eyebrow="python specifics" title="The GIL, what it does and does NOT protect">
         <p className="text-ink-dim leading-relaxed mb-1">
           CPython's <strong>Global Interpreter Lock</strong> ensures only one thread executes Python
           bytecode at a time. People wrongly conclude "so Python threads are safe." They aren't.
         </p>
         <Callout kind="trap" title="The GIL does NOT make += 1 atomic">
-          The GIL can be released at bytecode boundaries — since CPython 3.2 the interpreter switches
+          The GIL can be released at bytecode boundaries, since CPython 3.2 the interpreter switches
           threads on a time interval (<code className="font-mono">sys.setswitchinterval</code>, ~5 ms by
           default), not after every bytecode. Because{" "}
           <code className="font-mono">count += 1</code> compiles to several bytecodes (LOAD, ADD, STORE),
@@ -411,7 +411,7 @@ function Tradeoffs() {
   return (
     <>
       <Lede>
-        Staff interviews aren't graded on the answer — they're graded on whether you can <em>see the
+        Staff interviews aren't graded on the answer, they're graded on whether you can <em>see the
         axis you're trading on</em> and defend your pick. Almost every system decision is a tension
         between two goods. Name the tension, state the binding constraint, choose, and say what you gave
         up.
@@ -422,7 +422,7 @@ function Tradeoffs() {
           {[
             ["1 · Name the axis", "“This is a latency-vs-throughput call.” Make the tension explicit."],
             ["2 · State the binding constraint", "What actually matters here? “The SLA is p99 < 100 ms,” or “we're memory-bound on this box.”"],
-            ["3 · Pick a side", "Choose, grounded in that constraint — not by reflex."],
+            ["3 · Pick a side", "Choose, grounded in that constraint, not by reflex."],
             ["4 · Name what you gave up", "“…at the cost of throughput, which is fine because we're far from saturating the box.”"],
           ].map(([t, d]) => (
             <div
@@ -439,7 +439,7 @@ function Tradeoffs() {
         </div>
         <Callout kind="tip" title="The tell">
           Junior answers pick a side. Senior answers name the axis and the constraint <em>before</em>{" "}
-          picking. "It depends" is a weak answer alone — "it depends{" "}
+          picking. "It depends" is a weak answer alone, "it depends{" "}
           <strong>on X, and here X is Y, so I'd choose Z</strong>" is the staff-level version.
         </Callout>
       </Block>
@@ -458,17 +458,17 @@ function Tradeoffs() {
         />
       </Block>
 
-      <Block eyebrow="the one they push on" title="CAP — state it correctly">
+      <Block eyebrow="the one they push on" title="CAP, state it correctly">
         <p className="text-ink-dim leading-relaxed mb-1">
           CAP is constantly misquoted as "pick 2 of 3." The precise statement:{" "}
           <strong>when a network partition happens, you must choose between consistency and
-          availability</strong> — you cannot have both. With no partition you can have both C and A; the
+          availability</strong>, you cannot have both. With no partition you can have both C and A; the
           trade-off only bites <em>during</em> a partition.
         </p>
         <Callout kind="trap" title="Don't say 'pick 2 of 3'">
-          Partition tolerance isn't optional in a distributed system — networks <em>will</em> partition.
-          So the real choice is <strong>CP</strong> (refuse to answer rather than serve stale data —
-          e.g. a leader-based store, ZooKeeper) vs <strong>AP</strong> (stay up and reconcile later —
+          Partition tolerance isn't optional in a distributed system, networks <em>will</em> partition.
+          So the real choice is <strong>CP</strong> (refuse to answer rather than serve stale data,
+          e.g. a leader-based store, ZooKeeper) vs <strong>AP</strong> (stay up and reconcile later,
           e.g. Dynamo / Cassandra). The right framing: "P is given, so I'm choosing C or A under a
           partition, based on whether stale reads are tolerable."
         </Callout>
@@ -483,22 +483,22 @@ function Estimation() {
     <>
       <Lede>
         "How much storage? How many servers?" Back-of-envelope math gets you to the right order of
-        magnitude in 60 seconds. The trick is a handful of memorized numbers and aggressive rounding —
+        magnitude in 60 seconds. The trick is a handful of memorized numbers and aggressive rounding,
         precision is not the point; <em>the right power of ten is</em>.
       </Lede>
 
       <Block eyebrow="the cheat sheet" title="Latency numbers every programmer should know">
         <OpTable
-          cols={["Operation", "Latency", "—", "Mental model"]}
+          cols={["Operation", "Latency", "", "Mental model"]}
           rows={[
             { op: "L1 cache reference", avg: "~1 ns", avgTone: "good", why: "The baseline. Everything else is a multiple of this." },
             { op: "Branch mispredict", avg: "~3 ns", avgTone: "good", why: "A wrong guess by the CPU's predictor." },
             { op: "L2 cache reference", avg: "~4 ns", avgTone: "good", why: "Roughly 4× L1." },
             { op: "Mutex lock / unlock", avg: "~17 ns", avgTone: "good", why: "An uncontended lock is cheap." },
-            { op: "Main memory (RAM)", avg: "~100 ns", avgTone: "ok", why: "~100× L1 — a cache miss is expensive." },
+            { op: "Main memory (RAM)", avg: "~100 ns", avgTone: "ok", why: "~100× L1, a cache miss is expensive." },
             { op: "SSD random read", avg: "~16 µs", avgTone: "ok", why: "~160× RAM. Flash is fast but not RAM-fast." },
             { op: "Network RT in datacenter", avg: "~0.5 ms", avgTone: "ok", why: "~500 µs. Same building, different machine." },
-            { op: "Disk (HDD) seek", avg: "~10 ms", avgTone: "bad", why: "Spinning rust. ~100,000× RAM — avoid random disk I/O." },
+            { op: "Disk (HDD) seek", avg: "~10 ms", avgTone: "bad", why: "Spinning rust. ~100,000× RAM, avoid random disk I/O." },
             { op: "Network RT CA↔Netherlands", avg: "~150 ms", avgTone: "bad", why: "Speed of light is real. Cross-continent dominates everything." },
           ]}
         />
@@ -511,9 +511,9 @@ function Estimation() {
 
       <Block eyebrow="powers of two" title="Sizes & the 2^10 ≈ 10^3 trick">
         <OpTable
-          cols={["Power", "Approx", "—", "Name / use"]}
+          cols={["Power", "Approx", "", "Name / use"]}
           rows={[
-            { op: "2^10", avg: "~1 thousand", avgTone: "good", why: "1 KB. 2^10 = 1024 ≈ 10^3 — the conversion that powers all of this." },
+            { op: "2^10", avg: "~1 thousand", avgTone: "good", why: "1 KB. 2^10 = 1024 ≈ 10^3, the conversion that powers all of this." },
             { op: "2^20", avg: "~1 million", avgTone: "good", why: "1 MB. ≈ 10^6." },
             { op: "2^30", avg: "~1 billion", avgTone: "ok", why: "1 GB. ≈ 10^9. Also: a signed 32-bit int maxes near 2^31 ≈ 2.1 B." },
             { op: "2^32", avg: "~4 billion", avgTone: "ok", why: "4 GB address space; the full IPv4 space." },
@@ -535,7 +535,7 @@ function Estimation() {
         <Callout kind="tip" title="The worked recipe">
           <span className="block mb-1">1. <strong>Users → events/day.</strong> DAU × actions per user.</span>
           <span className="block mb-1">2. <strong>Events/day → QPS.</strong> Divide by 10^5. Then ×2–3 for peak.</span>
-          <span className="block mb-1">3. <strong>Reads vs writes.</strong> Most systems are read-heavy — assume ~100:1 unless told otherwise.</span>
+          <span className="block mb-1">3. <strong>Reads vs writes.</strong> Most systems are read-heavy, assume ~100:1 unless told otherwise.</span>
           <span className="block mb-1">4. <strong>Storage.</strong> writes/day × bytes/write × retention (days). Multiply out to GB / TB.</span>
           <span className="block">5. <strong>Sanity-check.</strong> Does it fit in RAM? One machine, or a fleet? State the implication.</span>
         </Callout>
@@ -569,7 +569,7 @@ function Communicating() {
           {[
             ["State assumptions first", "“I'll assume ~10M DAU, reads dominate writes, and we can tolerate eventual consistency. Stop me if any of those are wrong.” This invites correction before you've built on sand."],
             ["Think aloud", "Narrate the search, not just the result: “A hash map gives O(1) lookup but loses order; I need order for eviction, so I'll add a linked list.” The reasoning is the signal."],
-            ["Name the trade-off", "“This is faster but uses more memory — given we're latency-bound, I'll take it.” Show you see the cost, not just the win."],
+            ["Name the trade-off", "“This is faster but uses more memory, given we're latency-bound, I'll take it.” Show you see the cost, not just the win."],
             ["Propose, then refine", "“Brute force is O(n²); let me get it working, then optimize.” A correct-then-faster path beats a stuck search for the perfect answer."],
           ].map(([t, d]) => (
             <div
@@ -589,12 +589,12 @@ function Communicating() {
       <Block eyebrow="explaining complexity" title="Talk about Big-O like a teammate">
         <p className="text-ink-dim leading-relaxed mb-1">
           When you state a complexity, anchor it to <em>why</em>, in one breath: name the bound, name
-          the cause, name the cost you accept. "It's O(n log n) — the sort dominates; the linear scan
+          the cause, name the cost you accept. "It's O(n log n), the sort dominates; the linear scan
           after is free by comparison." That sentence tells the interviewer you understand the bound, not
           that you memorized it.
         </p>
         <Callout kind="tip" title="A clean complexity sentence">
-          "This is <strong>O(n)</strong> time and <strong>O(n)</strong> space — I'm trading memory for a
+          "This is <strong>O(n)</strong> time and <strong>O(n)</strong> space, I'm trading memory for a
           single pass, using a hash map to drop the nested loop. If memory were the constraint, I'd sort
           first and go O(n log n) time, O(1) extra space instead." One sentence, both options, the
           deciding constraint named.
@@ -610,10 +610,10 @@ function Communicating() {
         <Callout kind="tip" title="Drive, don't wait">
           Senior signal is owning the conversation: lay out the plan, ask clarifying questions, propose
           the next step ("shall I code the happy path first?"). You're auditioning as a peer, so behave
-          like one — lead the discussion rather than waiting to be quizzed.
+          like one, lead the discussion rather than waiting to be quizzed.
         </Callout>
         <Callout kind="note" title="Handle hints gracefully">
-          A nudge isn't a failure — it's data. "Good point, that breaks on duplicates — let me guard
+          A nudge isn't a failure, it's data. "Good point, that breaks on duplicates, let me guard
           that" shows you integrate feedback, which is exactly the day-job skill being tested.
         </Callout>
       </Block>
@@ -642,7 +642,7 @@ export default function StaffBench() {
       accent={ACCENT}
       eyebrow="Judgment · SHOULD WE"
       title="The Staff Bench"
-      subtitle="Senior rounds test judgment, not one more algorithm — designing a structure for a use case, reasoning about concurrency, and articulating trade-offs out loud."
+      subtitle="Senior rounds test judgment, not one more algorithm, designing a structure for a use case, reasoning about concurrency, and articulating trade-offs out loud."
       topics={TOPICS}
       activeId={active}
       onSelect={setActive}

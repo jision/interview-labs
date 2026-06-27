@@ -15,7 +15,7 @@ export default function StackQueueViz() {
       {/* Stack */}
       <div className="rounded-xl bg-surface-2 border border-line p-5">
         <div className="flex items-baseline justify-between mb-3">
-          <h4 className="font-bold text-ink">Stack — LIFO</h4>
+          <h4 className="font-bold text-ink">Stack, LIFO</h4>
           <span className="font-mono text-[11px] text-ink-faint">list: append / pop</span>
         </div>
         <div className="flex flex-col-reverse items-stretch gap-1.5 min-h-[8rem] justify-end mb-3">
@@ -46,7 +46,7 @@ export default function StackQueueViz() {
       {/* Queue */}
       <div className="rounded-xl bg-surface-2 border border-line p-5">
         <div className="flex items-baseline justify-between mb-3">
-          <h4 className="font-bold text-ink">Queue — FIFO</h4>
+          <h4 className="font-bold text-ink">Queue, FIFO</h4>
           <span className="font-mono text-[11px] text-ink-faint">deque: append / popleft</span>
         </div>
         <div className="flex items-center gap-1.5 min-h-[8rem] overflow-x-auto mb-3">
@@ -73,7 +73,7 @@ export default function StackQueueViz() {
         </div>
         <div className="flex gap-2">
           <Btn tone={ACCENT} onClick={() => { setQueue((q) => [...q, { id: ++uid, v: rnd() }]); setNote("enqueue → deque.append(): O(1) at the back."); }}>enqueue</Btn>
-          <Btn variant="ghost" onClick={() => { setQueue((q) => q.slice(1)); setNote("dequeue → deque.popleft(): O(1). On a plain list, pop(0) would be O(n) — that's the trap."); }}>dequeue</Btn>
+          <Btn variant="ghost" onClick={() => { setQueue((q) => q.slice(1)); setNote("dequeue → deque.popleft(): O(1). On a plain list, pop(0) would be O(n), that's the trap."); }}>dequeue</Btn>
         </div>
       </div>
 

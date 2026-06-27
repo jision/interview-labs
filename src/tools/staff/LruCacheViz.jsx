@@ -113,7 +113,7 @@ export default function LruCacheViz() {
         <span className="text-ink-faint">
           LRU (next evicted){" "}
           <span className="text-ink font-semibold">
-            {order.length ? order[order.length - 1].key : "—"}
+            {order.length ? order[order.length - 1].key : "-"}
           </span>
         </span>
       </div>

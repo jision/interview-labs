@@ -1,6 +1,6 @@
 # Interview Labs
 
-Interactive interview-prep site with **two tracks** — classic **DSA** and **AI architecture** —
+Interactive interview-prep site with **two tracks**, classic **DSA** and **AI architecture**,
 across eight tools on one landing hub, deployed as a single static site to GitHub Pages.
 Built with **Vite + React + Tailwind v4**.
 
@@ -31,15 +31,15 @@ The AI track ships **20 interactive widgets** (attention heatmap, embedding-spac
 decoding playground, tokenizer, gradient descent, bias–variance, RAG pipeline, agentic-loop
 trace, eval-method comparison, quantization, LoRA diagram, prompt patterns, approach decision
 tree, budget decoder, build-vs-buy, metric selector, disambiguation flashcards, cost estimator,
-serving-capacity estimator, trade-off triangle). All use hand-authored fixtures — no model runs
+serving-capacity estimator, trade-off triangle). All use hand-authored fixtures, no model runs
 in the browser, no network calls. See `ai-architect-labs-plan.md` for the full content map.
 
 All four tools are built and interactive. Highlights:
 
-- **DSA Lab** — Dynamic Array, Linked List, Stack & Queue, Hash Table, BST, Heap, **Trie**, **Graph** (BFS/DFS), each with a live visualizer + Python internals.
-- **Interview Bench** — Two Pointers, Sliding Window, Fast/Slow, Binary Search, BFS/DFS, Backtracking, DP atlas, Greedy, Heap/Top-K, Monotonic Stack, Intervals. Interactive demos for sliding window, two pointers, binary search, and monotonic stack.
-- **The Identifier** — an interactive Constraint Decoder (input size → target Big-O), Pattern Sniffer, Complexity Budget, a filterable Tricks Vault, and Disambiguation flashcards.
-- **The Staff Bench** — ~25 topics across four groups: **Design a DS** (LRU, LFU, rate limiter, trie, min-stack, median-of-stream, Insert/Delete/GetRandom, time-based KV, Twitter feed, Bloom filter), **Concurrency** (primitives, the classic threading problems, producer/consumer, deadlock & dining philosophers, threads vs async vs processes), **System Design** (scaling, caching, sharding, replication & consistency, queues, SQL vs NoSQL), and **Judgment** (trade-offs, capacity estimation, numbers to memorize). Interactive demos: LRU, token bucket, race condition, Insert/Delete/GetRandom, Bloom filter, consistent-hashing ring, producer/consumer.
+- **DSA Lab**, Dynamic Array, Linked List, Stack & Queue, Hash Table, BST, Heap, **Trie**, **Graph** (BFS/DFS), each with a live visualizer + Python internals.
+- **Interview Bench**, Two Pointers, Sliding Window, Fast/Slow, Binary Search, BFS/DFS, Backtracking, DP atlas, Greedy, Heap/Top-K, Monotonic Stack, Intervals. Interactive demos for sliding window, two pointers, binary search, and monotonic stack.
+- **The Identifier**, an interactive Constraint Decoder (input size → target Big-O), Pattern Sniffer, Complexity Budget, a filterable Tricks Vault, and Disambiguation flashcards.
+- **The Staff Bench**, ~25 topics across four groups: **Design a DS** (LRU, LFU, rate limiter, trie, min-stack, median-of-stream, Insert/Delete/GetRandom, time-based KV, Twitter feed, Bloom filter), **Concurrency** (primitives, the classic threading problems, producer/consumer, deadlock & dining philosophers, threads vs async vs processes), **System Design** (scaling, caching, sharding, replication & consistency, queues, SQL vs NoSQL), and **Judgment** (trade-offs, capacity estimation, numbers to memorize). Interactive demos: LRU, token bucket, race condition, Insert/Delete/GetRandom, Bloom filter, consistent-hashing ring, producer/consumer.
 
 Every tool reuses the same design system (`src/components/`), so they look and behave consistently.
 
@@ -70,13 +70,13 @@ Routing uses `HashRouter`, so refreshing a deep link (e.g. `…/#/dsa-lab`) neve
 
 ```
 src/
-├─ index.css              # design tokens (@theme) — colors, fonts, one source of truth
+├─ index.css              # design tokens (@theme), colors, fonts, one source of truth
 ├─ App.jsx                # HashRouter hub + the TOOLS registry
 ├─ components/
 │  ├─ ui.jsx              # Card, SectionTitle, Callout, CodeBlock, ComplexityTag, Btn, Tag
 │  ├─ layout.jsx         # shared content primitives: Lede, Try, Block, OpTable, withAccent
 │  ├─ ToolShell.jsx       # standard tool layout (header + sidebar nav + BackLink)
-│  └─ ComingSoon.jsx      # (unused now — kept for future tools)
+│  └─ ComingSoon.jsx      # (unused now, kept for future tools)
 └─ tools/
    ├─ DsaLab.jsx          # topic registry + content; visualizers in dsa/
    │  └─ dsa/             DynamicArray, LinkedList, StackQueue, HashTable, BST, Heap, Trie, Graph
@@ -96,7 +96,7 @@ component, and `withAccent(ACCENT)` to bind the tool's color to `Block`/`Try`.
    (`<Lede>` → `<Try>` → `<Block>`s with `CodeBlock`/`OpTable`/`Callout`), and register it in `CONTENT`.
 
 **Add a topic to any tool:** add a `TOPICS` entry, write its content component, and register
-it in that tool's `CONTENT` map — same pattern in all four files.
+it in that tool's `CONTENT` map, same pattern in all four files.
 
 **Change the look:** edit the tokens in `src/index.css` (`@theme { … }`). Colors, fonts,
 and surfaces flow through every component from there.

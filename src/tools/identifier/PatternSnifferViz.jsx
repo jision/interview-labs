@@ -7,7 +7,7 @@ const PHRASES = [
   {
     chip: "contiguous subarray",
     patterns: ["Sliding window", "Prefix sums"],
-    why: "Contiguous means a moving [left, right] range — grow/shrink a window, or diff two prefix sums.",
+    why: "Contiguous means a moving [left, right] range, grow/shrink a window, or diff two prefix sums.",
   },
   {
     chip: "kth largest / smallest",
@@ -22,7 +22,7 @@ const PHRASES = [
   {
     chip: "all permutations / subsets / combinations",
     patterns: ["Backtracking", "Bitmask (subsets)"],
-    why: "You must ENUMERATE the search space — recurse, choose/unchoose. n is tiny by necessity.",
+    why: "You must ENUMERATE the search space, recurse, choose/unchoose. n is tiny by necessity.",
   },
   {
     chip: "input is sorted",
@@ -32,7 +32,7 @@ const PHRASES = [
   {
     chip: "in-place / O(1) space",
     patterns: ["Two pointers", "Index encoding", "Cyclic sort"],
-    why: "No extra array allowed — overwrite as you go, or stash state in the sign/value of slots.",
+    why: "No extra array allowed, overwrite as you go, or stash state in the sign/value of slots.",
   },
   {
     chip: "number of ways / count paths",
@@ -42,17 +42,17 @@ const PHRASES = [
   {
     chip: "min / max so far",
     patterns: ["Greedy (running extreme)", "Monotonic stack"],
-    why: "Track one running value as you scan — Kadane (max subarray) or best-time-to-buy-sell. A separate tell, “next greater / smaller element,” is the one that points to a monotonic stack.",
+    why: "Track one running value as you scan, Kadane (max subarray) or best-time-to-buy-sell. A separate tell, “next greater / smaller element,” is the one that points to a monotonic stack.",
   },
   {
     chip: "detect a cycle",
     patterns: ["Fast & slow pointers", "Union-Find / DFS colors"],
-    why: "Linked list: Floyd's tortoise & hare. Undirected graph: union-find (a union of two already-connected nodes = a cycle). Directed graph: DFS with gray/black coloring (a back-edge to a gray/in-progress node = a cycle) — union-find won't catch directed cycles.",
+    why: "Linked list: Floyd's tortoise & hare. Undirected graph: union-find (a union of two already-connected nodes = a cycle). Directed graph: DFS with gray/black coloring (a back-edge to a gray/in-progress node = a cycle), union-find won't catch directed cycles.",
   },
   {
     chip: "ranges / intervals",
     patterns: ["Sort by endpoint", "Sweep line", "Greedy"],
-    why: "Sort intervals, then sweep left→right merging or counting overlaps — order is everything.",
+    why: "Sort intervals, then sweep left→right merging or counting overlaps, order is everything.",
   },
   {
     chip: "prefix / suffix sums",

@@ -88,7 +88,7 @@ export default function MonotonicStackViz() {
   return (
     <div className="rounded-xl bg-surface-2 border border-line p-5">
       <div className="flex flex-wrap gap-x-6 gap-y-2 mb-4 font-mono text-xs">
-        <Stat label="i" value={i < NUMS.length ? i : "—"} tone={ACCENT} />
+        <Stat label="i" value={i < NUMS.length ? i : "-"} tone={ACCENT} />
         <Stat label="stack depth" value={stack.length} />
         <Stat label="phase" value={phase} tone="#fbbf24" />
       </div>

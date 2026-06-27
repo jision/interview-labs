@@ -24,7 +24,7 @@ export default function TwoPointersViz() {
   function step() {
     if (done) return;
     if (l >= r) {
-      setNote("Pointers crossed without a match — no such pair exists. O(n), single pass.");
+      setNote("Pointers crossed without a match, no such pair exists. O(n), single pass.");
       setDone(true);
       return;
     }
@@ -38,13 +38,13 @@ export default function TwoPointersViz() {
       const nl = l + 1;
       setL(nl);
       setNote(
-        `sum ${s} < ${TARGET}: too small → move LEFT in (l → ${nl}). nums[${l}] was the smallest still in play, so it can't be in any valid pair — discard it.`
+        `sum ${s} < ${TARGET}: too small → move LEFT in (l → ${nl}). nums[${l}] was the smallest still in play, so it can't be in any valid pair, discard it.`
       );
     } else {
       const nr = r - 1;
       setR(nr);
       setNote(
-        `sum ${s} > ${TARGET}: too big → move RIGHT in (r → ${nr}). nums[${r}] was the largest still in play, so it can't pair with anything smaller — discard it.`
+        `sum ${s} > ${TARGET}: too big → move RIGHT in (r → ${nr}). nums[${r}] was the largest still in play, so it can't pair with anything smaller, discard it.`
       );
     }
   }
@@ -66,7 +66,7 @@ export default function TwoPointersViz() {
         <Stat label="r" value={r} tone={ACCENT} />
         <Stat
           label="nums[l]+nums[r]"
-          value={l <= r ? sum : "—"}
+          value={l <= r ? sum : "-"}
           tone={done ? "#4ade80" : sum === TARGET ? "#4ade80" : "#fbbf24"}
         />
       </div>

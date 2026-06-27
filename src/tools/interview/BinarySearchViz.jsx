@@ -77,7 +77,7 @@ export default function BinarySearchViz() {
       <div className="flex flex-wrap gap-x-6 gap-y-2 mb-4 font-mono text-xs">
         <Stat label="target" value={TARGET} tone="#4ade80" />
         <Stat label="lo" value={lo} tone={ACCENT} />
-        <Stat label="mid" value={lo <= hi ? mid : "—"} tone="#fbbf24" />
+        <Stat label="mid" value={lo <= hi ? mid : "-"} tone="#fbbf24" />
         <Stat label="hi" value={hi} tone={ACCENT} />
         <Stat label="range size" value={Math.max(0, hi - lo + 1)} />
       </div>

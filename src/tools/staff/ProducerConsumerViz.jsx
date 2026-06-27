@@ -5,8 +5,8 @@ const ACCENT = "#d6a94c";
 const N = 5; // bounded buffer capacity (number of slots)
 
 /* Two counting semaphores enforce backpressure on a bounded queue:
-     empty — counts free slots, starts at N. produce() waits on it.
-     full  — counts ready items, starts at 0. consume() waits on it.
+     empty, counts free slots, starts at N. produce() waits on it.
+     full, counts ready items, starts at 0. consume() waits on it.
    Invariant at rest: empty + full == N, and neither is ever negative.
    A real implementation also needs a mutex around the buffer itself so
    two producers (or two consumers) don't corrupt it; here we step one
@@ -41,7 +41,7 @@ export default function ProducerConsumerViz() {
     if (empty === 0) {
       setBlocked("producer");
       setNote(
-        `produce(): buffer FULL (full=${N}, empty=0) → producer waits on the "empty" semaphore. It will not run until a consumer frees a slot and signals empty. This is backpressure — the fast producer is throttled to the consumer's pace.`
+        `produce(): buffer FULL (full=${N}, empty=0) → producer waits on the "empty" semaphore. It will not run until a consumer frees a slot and signals empty. This is backpressure, the fast producer is throttled to the consumer's pace.`
       );
       return;
     }
@@ -63,7 +63,7 @@ export default function ProducerConsumerViz() {
     if (full === 0) {
       setBlocked("consumer");
       setNote(
-        `consume(): buffer EMPTY (full=0, empty=${N}) → consumer waits on the "full" semaphore. It sleeps until a producer enqueues an item and signals full — no busy-waiting, no CPU burned spinning.`
+        `consume(): buffer EMPTY (full=0, empty=${N}) → consumer waits on the "full" semaphore. It sleeps until a producer enqueues an item and signals full, no busy-waiting, no CPU burned spinning.`
       );
       return;
     }
