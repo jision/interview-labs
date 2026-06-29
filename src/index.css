@@ -31,6 +31,13 @@
   --color-architect: #fb6f3c;
   --color-foundations: #2dd4bf;
 
+  /* Per-tool accents, Data Architect track */
+  --color-sparklab: #ff8a3d;
+  --color-cloudstack: #4d9fff;
+  --color-lakehouse: #2ee6a8;
+  --color-dataarch: #f25f9c;
+  --color-datafound: #b388ff;
+
   /* Semantic accents for callouts */
   --color-tip: #4ade80;
   --color-warn: #fbbf24;

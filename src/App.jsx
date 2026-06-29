@@ -9,6 +9,11 @@ import ModelBench from "./tools/ModelBench.jsx";
 import Selector from "./tools/Selector.jsx";
 import ArchitectBench from "./tools/ArchitectBench.jsx";
 import Foundations from "./tools/Foundations.jsx";
+import SparkLab from "./tools/SparkLab.jsx";
+import CloudStack from "./tools/CloudStack.jsx";
+import Lakehouse from "./tools/Lakehouse.jsx";
+import DataArchitectBench from "./tools/DataArchitectBench.jsx";
+import DataFoundations from "./tools/DataFoundations.jsx";
 
 export const TOOLS = [
   {
@@ -101,6 +106,56 @@ export const TOOLS = [
     status: "ready",
     Comp: Foundations,
   },
+  {
+    path: "spark-lab",
+    track: "data",
+    name: "Spark · LAB",
+    tag: "Engine internals · the WHAT",
+    desc: "Partitions, shuffles, joins, and skew, the Spark execution model you can watch decide a stage's fate.",
+    accent: "#ff8a3d",
+    status: "ready",
+    Comp: SparkLab,
+  },
+  {
+    path: "cloud-stack",
+    track: "data",
+    name: "Cloud Data Stack",
+    tag: "The platform · the HOW",
+    desc: "EMR, S3, Parquet, the Glue catalog, and Athena, the AWS data plane that runs and stores it all.",
+    accent: "#4d9fff",
+    status: "ready",
+    Comp: CloudStack,
+  },
+  {
+    path: "lakehouse",
+    track: "data",
+    name: "Lakehouse & Modeling",
+    tag: "The data · SHAPE IT",
+    desc: "Iceberg vs Delta, the medallion layers, dimensional modeling, slowly changing dimensions, and streaming.",
+    accent: "#2ee6a8",
+    status: "ready",
+    Comp: Lakehouse,
+  },
+  {
+    path: "data-architect-bench",
+    track: "data",
+    name: "The Data Architect's Bench",
+    tag: "Systems & judgment · SHOULD WE",
+    desc: "Design the pipeline, size the cluster, pick batch vs streaming, control cost, and defend the trade-offs.",
+    accent: "#f25f9c",
+    status: "ready",
+    Comp: DataArchitectBench,
+  },
+  {
+    path: "data-foundations",
+    track: "data",
+    name: "Data Foundations",
+    tag: "Fundamentals · the BEDROCK",
+    desc: "Advanced SQL, the distributed-systems trade-offs, MapReduce, and how columnar storage actually works.",
+    accent: "#b388ff",
+    status: "ready",
+    Comp: DataFoundations,
+  },
 ];
 
 const TRACKS = [
@@ -115,6 +170,12 @@ const TRACKS = [
     label: "AI Architect · interview prep",
     blurb:
       "The GenAI/LLM-systems interview, mechanics, solution patterns, the right-tool decisions, and system design.",
+  },
+  {
+    id: "data",
+    label: "Data Architect · interview prep",
+    blurb:
+      "The AWS data-platform interview, Spark internals, the EMR and S3 stack, the lakehouse and modeling, and the system-design judgment calls.",
   },
 ];
 
@@ -169,8 +230,9 @@ function Landing() {
           Interview Labs
         </h1>
         <p className="text-lg text-ink-dim max-w-2xl leading-relaxed mb-14">
-          Two tracks of interactive tools, classic <span className="text-ink">DSA</span>{" "}
-          and <span className="text-ink">AI architecture</span>, each built to{" "}
+          Three tracks of interactive tools, classic <span className="text-ink">DSA</span>,{" "}
+          <span className="text-ink">AI architecture</span>, and{" "}
+          <span className="text-ink">data engineering</span>, each built to{" "}
           <span className="text-ink">grasp the concept</span>, not just memorize it.
         </p>
 
