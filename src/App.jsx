@@ -14,6 +14,9 @@ import CloudStack from "./tools/CloudStack.jsx";
 import Lakehouse from "./tools/Lakehouse.jsx";
 import DataArchitectBench from "./tools/DataArchitectBench.jsx";
 import DataFoundations from "./tools/DataFoundations.jsx";
+import SqlGym from "./tools/SqlGym.jsx";
+import DesignRoom from "./tools/DesignRoom.jsx";
+import BehavioralBench from "./tools/BehavioralBench.jsx";
 
 export const TOOLS = [
   {
@@ -156,6 +159,36 @@ export const TOOLS = [
     status: "ready",
     Comp: DataFoundations,
   },
+  {
+    path: "sql-gym",
+    track: "data",
+    name: "SQL Gym",
+    tag: "Practice · the REPS",
+    desc: "Twelve worked SQL-screen problems with hints, solutions, and the at-scale follow-up. Say your approach, then reveal.",
+    accent: "#f7c948",
+    status: "ready",
+    Comp: SqlGym,
+  },
+  {
+    path: "design-room",
+    track: "data",
+    name: "The Design Room",
+    tag: "The design round · LIVE",
+    desc: "The 45-minute data-system-design round: a repeatable framework, whiteboard choreography, and four cases rehearsed end to end.",
+    accent: "#ff6b6b",
+    status: "ready",
+    Comp: DesignRoom,
+  },
+  {
+    path: "behavioral-bench",
+    track: "data",
+    name: "Behavioral Bench",
+    tag: "The human round · STAR",
+    desc: "Bar-raiser mechanics, Leadership Principles mapped to data war stories, and story scaffolds to build yours before interview week.",
+    accent: "#d97cf6",
+    status: "ready",
+    Comp: BehavioralBench,
+  },
 ];
 
 const TRACKS = [
@@ -175,7 +208,7 @@ const TRACKS = [
     id: "data",
     label: "Data Architect · interview prep",
     blurb:
-      "The AWS data-platform interview, Spark internals, the EMR and S3 stack, the lakehouse and modeling, and the system-design judgment calls.",
+      "The AWS data-platform interview end to end: Spark internals, the EMR and S3 stack, the lakehouse and modeling, the judgment calls, plus live SQL and modeling drills, the 45-minute design round, and behavioral prep.",
   },
 ];
 

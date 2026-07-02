@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { ToolShell } from "../components/ToolShell.jsx";
 import { Callout, CodeBlock, Tag } from "../components/ui.jsx";
 import { Lede, OpTable, withAccent } from "../components/layout.jsx";
+import { QuickFire } from "../components/QuickFire.jsx";
 import BatchStreamingDecoderViz from "./dataarch/BatchStreamingDecoderViz.jsx";
 import ClusterSizingViz from "./dataarch/ClusterSizingViz.jsx";
 import PipelineCostViz from "./dataarch/PipelineCostViz.jsx";
@@ -19,6 +20,15 @@ const TOPICS = [
   { id: "buildbuy", label: "EMR vs Glue vs Databricks vs Snowflake", group: "Judgment" },
   { id: "governance", label: "Governance, lineage & Lake Formation", group: "Judgment" },
   { id: "numbers", label: "Numbers a data architect knows", group: "Judgment" },
+  { id: "slaops", label: "SLOs, freshness & incidents", group: "Operate" },
+  { id: "snowbricks", label: "Snowflake & Databricks, deep answers", group: "Platforms" },
+  { id: "rtolap", label: "Real-time OLAP engines", group: "Platforms" },
+  { id: "featurestores", label: "Feature stores & AI pipelines", group: "Platforms" },
+  { id: "datamesh", label: "Data mesh vs central platform", group: "Org & strategy" },
+  { id: "wellarch", label: "Well-Architected & consulting mode", group: "Org & strategy" },
+  { id: "trapbank", label: "The trap bank", group: "The gauntlet" },
+  { id: "redflags", label: "The red-flag cram sheet", group: "The gauntlet" },
+  { id: "quickfire", label: "Rapid fire · self-test", group: "Drill" },
 ];
 
 /* ── Batch, streaming, Lambda & Kappa ─────────────────────────── */
@@ -905,6 +915,1204 @@ function Numbers() {
   );
 }
 
+/* ── SLOs, freshness & incidents ──────────────────────────────── */
+function SlaOps() {
+  return (
+    <>
+      <Lede>
+        Operating a platform is where "it works on my laptop" dies. A senior data architect runs pipelines
+        like a service: named SLIs, an SLO with an error budget, freshness you can actually measure, an
+        alert policy that does not cry wolf, and an incident runbook that ends in an idempotent backfill
+        and a blameless postmortem. "How do you KNOW it's healthy?" is the whole topic.
+      </Lede>
+
+      <Block eyebrow="the four signals" title="Pipeline SLIs, borrowed from SRE">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          You cannot manage what you do not measure. Name the service-level indicators for a data pipeline
+          before you promise anything about it.
+        </p>
+        <OpTable
+          cols={["SLI", "Measures", "", "Failure it catches"]}
+          rows={[
+            { op: "Freshness / latency", avg: "how old the newest data is", avgTone: "good", why: "Gold table is 40 min past its 06:00 target. The single most common data incident." },
+            { op: "Completeness vs source", avg: "rows landed / rows at source", avgTone: "good", why: "Silver has 4.1M of the source's 4.3M rows, a dropped batch or a stalled CDC stream." },
+            { op: "Quality-pass rate", avg: "% rows passing checks", avgTone: "good", why: "Null-rate, range, and referential checks (dbt tests, DLT expectations). Catches bad data before consumers do." },
+            { op: "Serving availability", avg: "can queries actually run", avgTone: "ok", why: "Athena / Redshift / serving-API uptime. A fresh, correct table nobody can query is still an outage." },
+          ]}
+        />
+        <Callout kind="note" title="Four signals, the data analog of the golden signals">
+          Freshness, completeness, quality, and serving availability are the pipeline version of SRE's
+          latency, traffic, errors, and saturation. Naming them as measurable SLIs, not vibes, is the first
+          senior tell.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="the promise, with a budget" title="An SLO with an error budget">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          An SLI is a measurement; an <strong>SLO</strong> is the promise you make about it, and the{" "}
+          <strong>error budget</strong> is the slack that keeps the promise realistic.
+        </p>
+        <CodeBlock
+          title="text"
+          lang="text"
+          code={`SLI  : freshness of the gold.orders table
+SLO  : "fresh by 06:00 on 99% of business days, measured quarterly"
+
+error budget = 1% of ~63 business days  ~=  at most one allowed miss per quarter
+   inside budget  -> ship features, take risk
+   budget burned  -> freeze changes, fix reliability first`}
+        />
+        <Callout kind="tip" title="The error budget is a decision tool">
+          100% freshness is infinitely expensive and never the goal. The budget turns reliability into a
+          number both sides agree on: while there is budget you move fast, when it is spent you stop and
+          harden. That framing is what separates an SLO from a wish.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="how you actually measure it" title="Measuring freshness for real">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          "How do you know a table is fresh?" has concrete answers, not "we check the dashboard". Measure
+          against <strong>event-time</strong> and a declared deadline:
+        </p>
+        <ul className="text-ink-dim leading-relaxed mb-2 list-disc pl-5 space-y-1.5 text-sm">
+          <li><strong>Watermark / last-updated tables</strong>, each pipeline writes (table, partition, max event-time, load-time) to an audit table; freshness = now minus max event-time.</li>
+          <li><strong>dbt source freshness</strong>, <code className="font-mono">dbt source freshness</code> compares a loaded-at column against warn/error thresholds you declare per source.</li>
+          <li><strong>Airflow SLAs / dataset schedules</strong>, an SLA miss fires when a task or DAG runs past its deadline; data-aware scheduling triggers on dataset updates.</li>
+          <li><strong>Table-format metadata</strong>, Iceberg / Delta snapshot commit timestamps give you a last-write time for free.</li>
+        </ul>
+        <Callout kind="note" title="What the interviewer is listening for">
+          The signal is that you measure freshness against event-time and a declared deadline, not against
+          wall-clock arrival. "Last-updated watermark plus a 06:00 SLO" scores; "we'd notice if it broke"
+          is an instant junior tell.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="page a human, or not" title="Alert philosophy">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          The fastest way to make on-call ignore your alerts is to page them for things that do not matter.
+        </p>
+        <OpTable
+          cols={["Severity", "Route", "", "Rule"]}
+          rows={[
+            { op: "Consumer-impacting", avg: "page a human", avgTone: "bad", why: "SLO breached, downstream is serving stale or wrong data. Wake someone." },
+            { op: "Degraded but absorbed", avg: "file a ticket", avgTone: "ok", why: "A retry succeeded, a source was slow but caught up. Fix in hours, do not page." },
+            { op: "Informational", avg: "log / dashboard", avgTone: "good", why: "Volume drifted 5%, a partition ran long. Trend it, never alert on it." },
+          ]}
+        />
+        <Callout kind="trap" title="Alert fatigue kills trust">
+          Every page that turns out to be nothing trains on-call to swipe it away, and the one real
+          incident gets swiped too. Page only on consumer impact (a breached SLO), ticket the rest, and
+          delete alerts nobody acts on. A noisy alert is worse than no alert.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="when it breaks" title="The incident runbook">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          When an SLO breaks you run a rehearsed sequence, not a scramble.
+        </p>
+        <CodeBlock
+          title="text"
+          lang="text"
+          code={`data incident runbook:
+  1. DECLARE      -> open an incident, assign a lead, start a timeline
+  2. COMMUNICATE  -> tell consumers WITH an impact statement:
+                     "gold.orders is 2h stale; revenue dashboards low until 09:00"
+  3. STOP BLEEDING-> pause downstream OR serve last-good with a STALE flag
+  4. FIX          -> root-cause and correct the pipeline / source
+  5. BACKFILL     -> idempotent replay of the affected partitions
+  6. POSTMORTEM   -> blameless: what failed, why, what guardrail prevents it`}
+        />
+        <Callout kind="tip" title="'Data downtime' is the vocabulary">
+          Borrow the observability term: data downtime is any period where data is missing, late, or wrong.
+          The lifecycle mirrors an app outage, declare, communicate impact, stop the bleeding, fix,
+          backfill, learn, and the backfill is safe only because the pipeline was built idempotent and
+          partitioned.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="probe deeper" title="The follow-up chain">
+        <div className="space-y-3 text-sm">
+          <p className="text-ink-dim leading-relaxed">
+            <strong>A consumer says the dashboard looks wrong. Is that an incident?</strong> Not yet, I
+            reproduce it against the SLIs first: is it a freshness miss, a completeness gap, or a failed
+            quality check? If an SLO is breached I declare; if the data is correct and the consumer
+            misread it, I fix the confusion, not the pipeline.
+          </p>
+          <p className="text-ink-dim leading-relaxed">
+            <strong>Your freshness alert fires every morning but the data is fine. What do you do?</strong>{" "}
+            That is alert fatigue in the making. I check whether the threshold is tighter than the SLO,
+            wall-clock vs event-time, or a flaky upstream, then fix the measurement, loosen it to match the
+            real SLO, or downgrade it to a ticket. An alert nobody acts on gets deleted.
+          </p>
+          <p className="text-ink-dim leading-relaxed">
+            <strong>The 06:00 SLO was missed because a source landed three hours late. Whose error budget?</strong>{" "}
+            It still burns gold's budget, the consumer does not care whose fault it was. But the postmortem
+            action is upstream: a source-freshness SLA and a completeness check that pages before 06:00, so
+            next time I detect and communicate before the deadline, not after.
+          </p>
+          <p className="text-ink-dim leading-relaxed">
+            <strong>How do you backfill the lost hours without double-counting?</strong> I replay by
+            partition into an idempotent sink, overwrite the affected event-time partitions or MERGE on a
+            key, so re-running the window converges to the correct state instead of appending duplicates.
+            That property is designed in up front, not improvised during the incident.
+          </p>
+        </div>
+      </Block>
+
+      <Block eyebrow="say it cleanly" title="The interview answer">
+        <Callout kind="tip" title="The 30-second version">
+          "I run pipelines like a service. I define SLIs, freshness, completeness versus source,
+          quality-pass rate, and serving availability, and turn the key one into an SLO with an error
+          budget, like 'gold fresh by 06:00 on 99% of days'. I measure freshness off a last-updated
+          watermark against event-time, not wall-clock. I page only on consumer impact and ticket the
+          rest so I do not burn out on-call, and when something breaks I declare, communicate impact, stop
+          the bleeding, fix, run an idempotent backfill, and write a blameless postmortem."
+        </Callout>
+        <Callout kind="note" title="The 2-minute expansion">
+          "I borrow SRE discipline. The four SLIs are the data analog of the golden signals, and I attach
+          an error budget to the one that matters so reliability is a shared number: inside budget we ship,
+          once it is burned we freeze and harden. Freshness is measured concretely, a watermark or audit
+          table holding max event-time per partition, dbt source freshness, Airflow SLAs, or table-format
+          commit timestamps, always against event-time and a declared deadline. Alerting is tiered: page
+          only on a breached SLO with real consumer impact, ticket the degraded-but-absorbed cases, and log
+          the informational drift, because a noisy alert nobody trusts is worse than none. When an SLO
+          breaks I run the runbook: declare with a lead, communicate an impact statement, stop the bleeding
+          by pausing downstream or serving last-good behind a stale flag, fix the root cause, then replay
+          the affected partitions idempotently and close with a blameless postmortem. The whole 'data
+          downtime' loop only works because idempotency and partitioning were designed in, so the backfill
+          is routine rather than terrifying."
+        </Callout>
+      </Block>
+    </>
+  );
+}
+
+/* ── Snowflake & Databricks, deep answers ─────────────────────── */
+function SnowBricks() {
+  return (
+    <>
+      <Lede>
+        "Why not just buy Snowflake?" and "Why not standardize on Databricks?" are the two platform
+        questions a data architect gets every cycle. Answering well means knowing what each actually is
+        under the marketing, micro-partitions and virtual warehouses on one side, the lakehouse and Photon
+        on the other, and being able to say when the honest answer is "run both".
+      </Lede>
+
+      <Block eyebrow="the warehouse, internally" title="Snowflake mechanics">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Snowflake is a managed cloud warehouse whose entire design separates storage from compute.
+        </p>
+        <OpTable
+          cols={["Mechanism", "What it is", "", "Why it matters"]}
+          rows={[
+            { op: "Micro-partitions", avg: "50-500 MB uncompressed, columnar", avgTone: "good", why: "Immutable units auto-created on load with per-column min/max, so Snowflake prunes partitions without you managing files. The 50-500 MB is the uncompressed size; on disk it is smaller." },
+            { op: "Clustering keys", avg: "a sort key for huge tables", avgTone: "ok", why: "Improves pruning, but auto-reclustering burns credits continuously, only cluster when scan cost justifies it." },
+            { op: "Virtual warehouses", avg: "isolated compute, per-second credits", avgTone: "good", why: "Size and suspend independently; give ETL and BI separate warehouses so one never starves another." },
+            { op: "Multi-cluster warehouses", avg: "add clusters under concurrency", avgTone: "ok", why: "Fan out to more clusters as the query queue grows, for high-concurrency BI. Scales out, costs more." },
+          ]}
+        />
+        <p className="text-ink-dim leading-relaxed mt-2">
+          Three headline features fall out of the same split: <strong>Time Travel</strong> (query or
+          restore a table as-of a timestamp within the retention window), <strong>zero-copy clone</strong>{" "}
+          (an instant, metadata-only copy of a table, schema, or database for dev and test, no data
+          duplicated), and <strong>Secure Data Sharing</strong> (grant another account live read access
+          with no copy, the base of the Marketplace).
+        </p>
+        <Callout kind="note" title="Storage/compute split is the whole model">
+          Every Snowflake talking point, per-second warehouses, workload isolation, zero-copy clone,
+          sharing, falls out of one choice: data lives once in cloud storage and compute is elastic,
+          stateless, and billed by the second on top. Say that and the features stop being a laundry list.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="the lakehouse, internally" title="Databricks mechanics">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Databricks is the managed Spark + Delta Lake platform, sitting on open storage rather than a
+          proprietary warehouse.
+        </p>
+        <OpTable
+          cols={["Mechanism", "What it is", "", "Why it matters"]}
+          rows={[
+            { op: "Unity Catalog", avg: "central governance + lineage", avgTone: "good", why: "One permission model, column/row policy, and automatic column-level lineage over all data and AI assets." },
+            { op: "Delta Live Tables", avg: "declarative pipelines + expectations", avgTone: "good", why: "Declare the transform and data-quality expectations; DLT manages orchestration, retries, and incremental processing." },
+            { op: "Photon", avg: "vectorized C++ execution engine", avgTone: "ok", why: "Spark-API compatible but proprietary; native vectorized execution for big SQL/DataFrame speedups. Not open source." },
+            { op: "Serverless SQL warehouses", avg: "managed SQL compute", avgTone: "ok", why: "Fast-starting, auto-scaling SQL endpoints for BI on the lakehouse, the warehouse-style serving surface." },
+          ]}
+        />
+        <Callout kind="tip" title="Open format is the pitch">
+          Databricks' core argument is that your data stays in open Delta / Parquet on your own storage, so
+          you are not locked into a proprietary internal format, while Photon and Unity Catalog give
+          warehouse-grade speed and governance on top. That "open lake, warehouse experience" is the
+          lakehouse claim.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="the two rebuttals" title="Why not everything on one of them">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          The interview wants you to argue both directions without dogma.
+        </p>
+        <p className="text-ink-dim leading-relaxed mb-2">
+          <strong>"Why not put everything in Snowflake?"</strong> Snowflake is superb for SQL and BI, but
+          heavy programmatic and ML workloads want Spark's DataFrame/Python surface, not SQL; teams that
+          value open-format neutrality do not want data trapped in a proprietary format; streaming and
+          always-on serving fit a lake better; and at large always-on scale, warehouse compute gets
+          expensive. Often the real answer is both: a lake/Spark layer for engineering and ML, Snowflake
+          for BI on top.
+        </p>
+        <p className="text-ink-dim leading-relaxed mb-2">
+          <strong>"Why not standardize everything on Databricks?"</strong> The mirror: pure SQL/BI analysts
+          and dashboards are frequently faster and cheaper on a warehouse with no cluster concept;
+          Snowflake's per-second warehouses, sharing, and marketplace are best-in-class for that; and a
+          Spark-centric platform carries operational and skill overhead a SQL-only shop does not need. Same
+          "both" answer: use each where it is strongest.
+        </p>
+        <Callout kind="note" title="What the interviewer is listening for">
+          The scoring signal is whether you can argue both rebuttals fairly and land on a workload-based
+          split. Reciting one vendor's feature list is easy; explaining why a Spark/ML shop keeps an open
+          lake and a BI-heavy shop leans on warehouse compute, and why many run both, is the staff answer.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="probe deeper" title="The follow-up chain">
+        <div className="space-y-3 text-sm">
+          <p className="text-ink-dim leading-relaxed">
+            <strong>What is a micro-partition, and why does Snowflake not need you to manage files?</strong>{" "}
+            A 50 to 500 MB (uncompressed) immutable columnar unit Snowflake creates automatically on load, carrying
+            per-column min/max. Pruning happens on that metadata, so there is no small-files problem to
+            hand-tune, the platform owns file layout, unlike a raw S3 lake.
+          </p>
+          <p className="text-ink-dim leading-relaxed">
+            <strong>When is a clustering key worth it, given it costs credits?</strong> Only on very large
+            tables where queries filter on a column that is not naturally ordered, and where the scan
+            savings beat the continuous auto-reclustering credit burn. On small or well-ordered tables it
+            is a waste.
+          </p>
+          <p className="text-ink-dim leading-relaxed">
+            <strong>A team wants Databricks for ML but finance loves Snowflake's bill predictability. Reconcile it.</strong>{" "}
+            I do not force one. Spark/ML and heavy ETL go on Databricks over an open Delta lake, BI serving
+            stays on Snowflake, and I govern the boundary so data is not copied endlessly. Each tool does
+            what it is best at, and I show the combined cost, not one line item.
+          </p>
+          <p className="text-ink-dim leading-relaxed">
+            <strong>What does "open format" actually buy me if I am happy with Snowflake today?</strong>{" "}
+            Optionality: with Delta / Iceberg / Parquet on your own storage, another engine, Spark, Trino,
+            DuckDB, even Snowflake via Iceberg tables, can read the same data with no migration. It is
+            insurance against lock-in and lets specialized engines share one copy.
+          </p>
+        </div>
+      </Block>
+
+      <Block eyebrow="say it cleanly" title="The interview answer">
+        <Callout kind="tip" title="The 30-second version">
+          "Snowflake is a managed warehouse built on separating storage from compute: immutable
+          micro-partitions with min/max pruning, per-second virtual warehouses you isolate per workload,
+          plus Time Travel, zero-copy clone, and data sharing. Databricks is managed Spark on an open Delta
+          lake, with Unity Catalog for governance and lineage, Delta Live Tables, and the Photon engine. I
+          do not crown one, Spark/ML and open formats favor the lakehouse, SQL and BI favor the warehouse,
+          and most serious stacks run both."
+        </Callout>
+        <Callout kind="note" title="The 2-minute expansion">
+          "The unifying idea for Snowflake is the storage/compute split: micro-partitions are 50 to 500 MB
+          uncompressed immutable columnar units with min/max metadata, so pruning is automatic and there is no
+          small-files tuning; virtual warehouses are per-second, suspendable, and isolated so ETL never
+          starves BI, with multi-cluster fan-out for concurrency; and Time Travel, zero-copy clone, and
+          sharing all follow from data living once and compute being elastic. Clustering keys help pruning
+          on huge tables but auto-recluster on credits, so I use them only when scan savings justify it.
+          Databricks is the open-lakehouse counterpart: Spark on Delta over your own storage, Unity Catalog
+          for one governance and lineage model, Delta Live Tables for declarative pipelines with quality
+          expectations, Photon as a proprietary-but-Spark-compatible vectorized engine, and serverless SQL
+          warehouses for BI. Then I argue both rebuttals: not everything in Snowflake because Spark/ML,
+          open formats, streaming, and always-on cost push toward a lake; not everything in Databricks
+          because pure SQL/BI is often cheaper on a warehouse. The senior landing is a workload-based
+          split, lake for engineering, warehouse for serving, not a favorite."
+        </Callout>
+      </Block>
+    </>
+  );
+}
+
+/* ── Real-time OLAP engines ───────────────────────────────────── */
+function RtOlap() {
+  return (
+    <>
+      <Lede>
+        Athena and Spark are built for flexibility over huge, cold data; they are not built to answer a
+        dashboard in 200 milliseconds at hundreds of queries a second. That job belongs to a real-time
+        OLAP engine, Druid, Pinot, or ClickHouse, and the senior skill is knowing exactly when that extra
+        system earns its keep and when it is a shiny liability.
+      </Lede>
+
+      <Block eyebrow="the three engines" title="Druid, Pinot, ClickHouse">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          All three do the same core thing, sub-second aggregations over fresh, high-cardinality event data
+          at high query concurrency. The flavors differ.
+        </p>
+        <OpTable
+          cols={["Engine", "One-line flavor", "", "Sweet spot"]}
+          rows={[
+            { op: "Apache Druid", avg: "the real-time OLAP pioneer", avgTone: "good", why: "Ingests from Kafka and serves time-sliced aggregations; the original streaming-analytics workhorse." },
+            { op: "Apache Pinot", avg: "user-facing analytics at scale", avgTone: "good", why: "Built at LinkedIn for member-facing analytics (Who viewed your profile); designed for very high QPS." },
+            { op: "ClickHouse", avg: "the fast column store you self-host", avgTone: "ok", why: "Blazing columnar SQL, easy to run yourself; popular for logs, product analytics, and observability." },
+          ]}
+        />
+        <Callout kind="note" title="One capability, three packagings">
+          Druid, Pinot, and ClickHouse all deliver seconds-fresh aggregations at high concurrency; you pick
+          on operational taste, Kafka-native time-series (Druid), extreme user-facing QPS (Pinot), or
+          self-hosted SQL simplicity (ClickHouse). Knowing they solve the same problem stops you treating
+          them as exotic.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="when it earns the system" title="When they are worth it">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          A dedicated OLAP store is another cluster to run. It earns that cost only for a specific shape of
+          workload:
+        </p>
+        <ul className="text-ink-dim leading-relaxed mb-2 list-disc pl-5 space-y-1.5 text-sm">
+          <li><strong>User-facing analytics widgets</strong>, a "views over the last 7 days" chart embedded in your product, hit by every user.</li>
+          <li><strong>Operational dashboards</strong> needing seconds-fresh data plus hundreds of QPS, fraud, logistics, live ops.</li>
+          <li><strong>High-concurrency slice-and-dice</strong> over recent events where p99 latency is a product requirement.</li>
+        </ul>
+        <Callout kind="trap" title="It is NOT for ad-hoc lake queries">
+          If the workload is a handful of analysts running exploratory queries over cold history, that is
+          Athena or the warehouse, flexibility and pennies-per-query beat sub-second latency. Standing up
+          Druid or Pinot for occasional big scans is paying a 24/7 serving-cluster tax for a batch job.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="where it sits" title="The architecture slot">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          The real-time OLAP engine is a serving layer on the hot path, never the system of record.
+        </p>
+        <CodeBlock
+          title="text"
+          lang="text"
+          code={`events -> Kafka --+--> real-time OLAP (Druid/Pinot/CH)  -> product / dashboards
+                  |         (hot serving path: seconds-fresh, high QPS)
+                  |
+                  +--> lakehouse (S3 + Iceberg/Delta)   -> SYSTEM OF RECORD
+                            ^                                (batch, ML, history)
+                            |
+                     backfill / re-load the OLAP store FROM the lake`}
+        />
+        <p className="text-ink-dim leading-relaxed mt-2">
+          The lake stays the source of truth; the OLAP store is a derived, rebuildable view of the recent
+          window. If it is lost or its schema changes, you backfill it from the lake.
+        </p>
+        <Callout kind="tip" title="Derived, not authoritative">
+          Treat the OLAP engine as a cache you can rebuild, not a database you cannot lose. Keeping the
+          lakehouse as system of record makes the fast layer disposable, which is exactly what you want for
+          something optimized for speed over durability.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="vs the tools you already have" title="Against Athena and Redshift">
+        <OpTable
+          cols={["Dimension", "Real-time OLAP", "", "Athena / Redshift"]}
+          rows={[
+            { op: "Latency", avg: "sub-second, consistent", avgTone: "good", why: "Athena is seconds-to-minutes; great for analysts, wrong for a per-user widget." },
+            { op: "Concurrency", avg: "hundreds to thousands QPS", avgTone: "good", why: "Athena has low concurrent-query limits; Redshift scales further but not to user-facing QPS cheaply." },
+            { op: "Freshness", avg: "seconds from the stream", avgTone: "good", why: "Athena / Redshift are as fresh as the last batch load unless you engineer streaming ingest." },
+            { op: "Flexibility / cost", avg: "narrower, always-on cost", avgTone: "bad", why: "Athena is pay-per-scan and endlessly flexible; the OLAP store trades that for speed and runs 24/7." },
+          ]}
+        />
+        <Callout kind="note" title="What the interviewer is listening for">
+          The signal is restraint. Reaching for Druid or Pinot by default reads as over-engineering; the
+          senior answer names the exact trigger, user-facing widgets or ops dashboards needing seconds-fresh
+          data at high QPS, and otherwise stays on Athena or the warehouse.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="probe deeper" title="The follow-up chain">
+        <div className="space-y-3 text-sm">
+          <p className="text-ink-dim leading-relaxed">
+            <strong>A PM wants a live "trending now" widget on the homepage. Athena or Druid?</strong> That
+            is a user-facing, high-QPS, seconds-fresh widget, exactly the case Druid or Pinot earns.
+            Athena's concurrency limits and per-scan cost make it wrong for something every visitor hits.
+            It goes on a real-time OLAP store fed from Kafka.
+          </p>
+          <p className="text-ink-dim leading-relaxed">
+            <strong>The same company's analysts want to explore two years of history. Same engine?</strong>{" "}
+            No, that is ad-hoc, low-concurrency, cold data, Athena or the warehouse over the lake. Forcing
+            it into the OLAP store wastes an always-on cluster on queries that do not need sub-second
+            latency.
+          </p>
+          <p className="text-ink-dim leading-relaxed">
+            <strong>Your Pinot cluster's schema needs to change, or it got corrupted. Now what?</strong>{" "}
+            Because it is a derived view, I rebuild it from the lakehouse system of record, replay the
+            relevant window from Kafka or batch-load from Iceberg. I never treat the OLAP store as the only
+            copy, so a rebuild is routine, not a data-loss event.
+          </p>
+          <p className="text-ink-dim leading-relaxed">
+            <strong>What is the honest cost of adding one of these?</strong> A new 24/7 distributed system
+            to size, monitor, and carry on-call, plus ingestion plumbing and a second data model. That
+            operational tax is why I add it only when a real latency-and-concurrency SLO forces it, not
+            because "real-time" sounds good.
+          </p>
+        </div>
+      </Block>
+
+      <Block eyebrow="say it cleanly" title="The interview answer">
+        <Callout kind="tip" title="The 30-second version">
+          "Druid, Pinot, and ClickHouse all serve sub-second aggregations over fresh event streams at high
+          concurrency, Druid the Kafka-native pioneer, Pinot for user-facing analytics at LinkedIn scale,
+          ClickHouse the fast self-hosted column store. I add one only for user-facing widgets or ops
+          dashboards that need seconds-fresh data at hundreds of QPS, never for ad-hoc history. It sits on
+          the hot path off Kafka as a rebuildable, derived view, while the lakehouse stays system of record
+          and backfills it."
+        </Callout>
+        <Callout kind="note" title="The 2-minute expansion">
+          "These are OLAP serving engines, not lakes. They solve one shape of problem, sub-second
+          aggregations over fresh, high-cardinality events at high concurrency, and the flavor differences
+          are operational: Druid is the Kafka-native real-time pioneer, Pinot targets extreme user-facing
+          QPS, ClickHouse is the fast self-hosted columnar SQL store. The trigger to add one is a product
+          requirement, an embedded analytics widget every user hits, or an ops dashboard needing
+          seconds-fresh data at hundreds of QPS with a hard p99. It is emphatically not for ad-hoc
+          exploration over cold history, that stays on Athena or the warehouse, where flexibility and
+          pay-per-scan win. Architecturally it is a hot-path serving layer off Kafka, and the lakehouse
+          remains the system of record, so the OLAP store is a derived view I can rebuild by replaying the
+          stream or batch-loading from Iceberg. Versus Athena and Redshift it trades flexibility and
+          per-scan cost for latency, concurrency, and freshness. And the honest caveat is the operational
+          cost of a whole new 24/7 distributed system, which is why I only reach for it when the latency
+          and concurrency SLO genuinely forces it."
+        </Callout>
+      </Block>
+    </>
+  );
+}
+
+/* ── Feature stores & AI pipelines ────────────────────────────── */
+function FeatureStores() {
+  return (
+    <>
+      <Lede>
+        When the interview turns to ML platforms, the data architect's lane is clear: feature stores and
+        RAG pipelines are ETL with stricter correctness rules. Nail two ideas, why a feature store exists
+        (killing train/serve skew and point-in-time leakage), and that a RAG ingestion pipeline is just a
+        new ETL surface with the same SLOs, idempotency, and backfills you already run.
+      </Lede>
+
+      <Block eyebrow="why it exists" title="Train/serve skew and point-in-time correctness">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          A feature store solves two specific, expensive failures:
+        </p>
+        <ul className="text-ink-dim leading-relaxed mb-2 list-disc pl-5 space-y-1.5 text-sm">
+          <li><strong>Train/serve skew</strong>, the feature computed in a training notebook and the one computed in the serving path drift apart because they are two implementations. Same model, different inputs, silent accuracy loss. The store makes both read one feature definition.</li>
+          <li><strong>Point-in-time correctness</strong>, when you build a training set, each label must join to feature values as they were at that moment, not as they are now. Joining to current values leaks future information into the past and inflates offline scores.</li>
+        </ul>
+        <Callout kind="note" title="It is the data-leakage story, again">
+          Point-in-time-correct joins are the feature-store version of the leakage sin: if a training row
+          sees a value that only existed after the label event, your offline metric is a fantasy that
+          collapses in production. The store enforces as-of joins so the past cannot see the future.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="the anatomy" title="What is inside a feature store">
+        <OpTable
+          cols={["Component", "What it holds", "", "Role"]}
+          rows={[
+            { op: "Feature registry", avg: "named, versioned definitions", avgTone: "good", why: "One source of truth for how each feature is computed, shared by training and serving." },
+            { op: "Offline store", avg: "full history on the lake", avgTone: "good", why: "Columnar tables (S3 / Parquet) for building training sets with point-in-time joins. Big, cheap, batch." },
+            { op: "Online store", avg: "latest value, low latency", avgTone: "ok", why: "A fast KV store (DynamoDB / Redis) serving single-digit-ms lookups at inference time." },
+            { op: "Materialization jobs", avg: "keep the two consistent", avgTone: "good", why: "Pipelines that compute features and write both stores, so offline and online never disagree." },
+          ]}
+        />
+        <Callout kind="tip" title="Offline for training, online for serving">
+          The split is the whole design: a big cheap columnar store for point-in-time training joins, a
+          fast KV store for inference lookups, and materialization jobs keeping them in sync. Consistency
+          between the two is what actually kills train/serve skew.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="the tools" title="SageMaker Feature Store and Feast">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Two names worth carrying:
+        </p>
+        <ul className="text-ink-dim leading-relaxed mb-2 list-disc pl-5 space-y-1.5 text-sm">
+          <li><strong>Amazon SageMaker Feature Store</strong>, managed AWS feature store with an offline store on S3 and an online store for low-latency serving, integrated with the SageMaker training and inference stack.</li>
+          <li><strong>Feast</strong>, the popular open-source feature store; a thin layer that defines features and orchestrates an offline store (warehouse / lake) plus an online store (Redis / DynamoDB) you bring.</li>
+        </ul>
+        <Callout kind="note" title="What the interviewer is listening for">
+          The signal is that you frame a feature store as a data-engineering problem, not ML magic:
+          definitions, an offline/online split, and materialization jobs with consistency guarantees.
+          Naming SageMaker Feature Store or Feast is fine, but the points are for the architecture and the
+          point-in-time join.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="the new ETL surface" title="RAG pipelines are ETL in a new costume">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Retrieval-augmented generation put a new pipeline on the data team's plate, and it is ETL with an
+          embedding model in the transform.
+        </p>
+        <CodeBlock
+          title="text"
+          lang="text"
+          code={`RAG ingestion pipeline (this is ETL):
+  ingest docs -> chunk -> embed (model) -> write vectors + metadata -> vector store
+                                                        |
+  query time: embed the question -> ANN search + metadata filter -> top-k -> LLM`}
+        />
+        <ul className="text-ink-dim leading-relaxed mb-2 list-disc pl-5 space-y-1.5 text-sm">
+          <li><strong>Freshness / re-embedding</strong>, when a source doc changes you must re-chunk and re-embed it; stale vectors return wrong answers. This is a freshness SLO like any table.</li>
+          <li><strong>Metadata filtering</strong>, store tenant, ACL, date, and source alongside each vector so retrieval respects permissions and recency, not just similarity.</li>
+          <li><strong>Retrieval evaluation</strong>, measure retrieval quality (recall@k, groundedness), because a bad retriever silently degrades the whole system.</li>
+        </ul>
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Vector storage is an ops-and-scale choice, not a correctness one: <strong>OpenSearch</strong>{" "}
+          (k-NN), Postgres via <strong>pgvector</strong>, or a dedicated vector store.
+        </p>
+        <Callout kind="tip" title="RAG ingestion is a pipeline with SLOs">
+          Chunk-embed-store is extract-transform-load. It needs the same discipline as everything else:
+          idempotent writes (re-embedding a doc replaces its vectors, keyed by doc id, not duplicates),
+          backfills (re-embed the corpus when you change models), and a freshness SLO. The data architect
+          owns that surface.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="probe deeper" title="The follow-up chain">
+        <div className="space-y-3 text-sm">
+          <p className="text-ink-dim leading-relaxed">
+            <strong>How does a feature store actually prevent train/serve skew?</strong> Both training and
+            serving read features from one definition and one materialization pipeline, so the value is
+            computed once and reused, not re-implemented on each side. The offline and online stores are
+            kept consistent by the same job, so the model sees identical inputs in both worlds.
+          </p>
+          <p className="text-ink-dim leading-relaxed">
+            <strong>Walk me through a point-in-time join.</strong> For each training row with a label at
+            time t, I join feature values as of t, the latest value with a timestamp &lt;= t, rather than the
+            current value. That as-of semantics is why the offline store keeps full history with event
+            timestamps, and it is what prevents leaking post-label information.
+          </p>
+          <p className="text-ink-dim leading-relaxed">
+            <strong>A source document changed. What has to happen in your RAG pipeline?</strong> I re-chunk
+            and re-embed that document and overwrite its vectors idempotently, keyed by doc id, so retrieval
+            reflects the new content with no stale or duplicate vectors. If I changed the embedding model
+            instead, that is a full-corpus backfill.
+          </p>
+          <p className="text-ink-dim leading-relaxed">
+            <strong>You swapped embedding models. Why is that a backfill?</strong> Vectors from different
+            models are not comparable, so the whole corpus must be re-embedded and the index rebuilt before
+            queries are valid. It is a reprocessing job, partitioned, idempotent, re-runnable, which is why
+            I treat the vector store as a derived, rebuildable asset over the lake.
+          </p>
+        </div>
+      </Block>
+
+      <Block eyebrow="say it cleanly" title="The interview answer">
+        <Callout kind="tip" title="The 30-second version">
+          "A feature store exists to kill two failures: train/serve skew, by making training and serving
+          read one feature definition, and point-in-time leakage, by joining labels to feature values as-of
+          the label time. Its anatomy is a registry, an offline store on the lake for training, a
+          low-latency online store for inference, and materialization jobs keeping them consistent,
+          SageMaker Feature Store or Feast. RAG ingestion, ingest, chunk, embed, store, is just new ETL
+          with the same SLOs, idempotency, and backfills."
+        </Callout>
+        <Callout kind="note" title="The 2-minute expansion">
+          "Feature stores are a data-engineering answer to two ML failures. Train/serve skew is two
+          implementations of the same feature drifting apart; the store fixes it by having training and
+          serving read one versioned definition materialized by one pipeline. Point-in-time correctness is
+          the leakage story: each training label joins to feature values as they were at the label's
+          timestamp, an as-of join, so the past never sees the future, which is why the offline store keeps
+          full history with event times. The architecture is an offline store on the lake for cheap
+          point-in-time training joins, a fast KV online store for single-digit-millisecond inference
+          lookups, and materialization jobs that keep the two consistent, SageMaker Feature Store and Feast
+          being the reference implementations. RAG is the newer surface but the same discipline: ingest,
+          chunk, embed, and write vectors plus metadata is ETL with an embedding model in the transform. It
+          has freshness (re-embed changed docs), metadata filtering for permissions and recency, and
+          retrieval evaluation, and the vector store, OpenSearch, pgvector, or a dedicated store, is a
+          derived, rebuildable asset. So I treat both as pipelines with SLOs, idempotent writes, and
+          backfills, exactly like the rest of the platform."
+        </Callout>
+      </Block>
+    </>
+  );
+}
+
+/* ── Data mesh vs central platform ────────────────────────────── */
+function DataMesh() {
+  return (
+    <>
+      <Lede>
+        "Should we adopt data mesh?" is an org-design question wearing a technology costume. The senior
+        move is to define the four principles precisely, say what a data product actually is, name when
+        mesh is right and the ways it fails, and lead with Conway's law rather than any tool.
+      </Lede>
+
+      <Block eyebrow="the four principles" title="Data mesh, precisely">
+        <OpTable
+          cols={["Principle", "Means", "", "In practice"]}
+          rows={[
+            { op: "Domain ownership", avg: "producers own their data", avgTone: "good", why: "Decentralize from a central team to the teams closest to the source, they understand it best." },
+            { op: "Data as a product", avg: "datasets have consumers", avgTone: "good", why: "Discoverable, documented, SLO-backed; a product-manager mindset, not a dumped table." },
+            { op: "Self-serve platform", avg: "a platform team enables domains", avgTone: "good", why: "Central paved-road tooling so domains ship products without reinventing infra." },
+            { op: "Federated governance", avg: "global rules, enforced as code", avgTone: "ok", why: "Interoperability and compliance standards set centrally, enforced automatically, not by a review board." },
+          ]}
+        />
+        <Callout kind="note" title="Decentralize ownership, centralize the platform">
+          The four principles pull in tension on purpose: push data ownership OUT to domains, but keep a
+          central self-serve platform and global governance so you get autonomy without chaos. Miss either
+          half and mesh degrades into silos or a bottleneck.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="the load-bearing term" title="What a data product actually is">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          "Data product" is the term everything hinges on, and it has a specific checklist. A data product
+          is:
+        </p>
+        <ul className="text-ink-dim leading-relaxed mb-2 list-disc pl-5 space-y-1.5 text-sm">
+          <li><strong>Discoverable and addressable</strong>, findable in a catalog with a stable address to query.</li>
+          <li><strong>Trustworthy</strong>, SLO-backed freshness and quality, with documented lineage.</li>
+          <li><strong>Interoperable</strong>, standard formats and shared identifiers so products join across domains.</li>
+          <li><strong>Owned</strong>, a named domain team accountable for it, not orphaned.</li>
+        </ul>
+        <Callout kind="tip" title="Product, not a table dump">
+          The test is whether a consumer can find it, trust its freshness, join it to other domains' data,
+          and know who to page. If not, it is a table someone threw over the wall, and calling it a "data
+          product" is the rebrand trap below.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="when it fits, how it breaks" title="Right for scale, wrong for everyone else">
+        <OpTable
+          cols={["Signal", "Reading", "", "So"]}
+          rows={[
+            { op: "Central team is the bottleneck", avg: "many domains, one overloaded team", avgTone: "good", why: "The classic trigger for mesh: the central data team cannot keep up with every request." },
+            { op: "Strong platform maturity", avg: "paved-road self-serve exists", avgTone: "good", why: "Domains can build on real tooling. Mesh needs this substrate to stand on." },
+            { op: "Tiny org, few domains", avg: "no bottleneck to solve", avgTone: "bad", why: "One small team has nothing to decentralize; mesh adds coordination overhead for nothing." },
+            { op: "No platform, just a reorg", avg: "ownership without tooling", avgTone: "bad", why: "Declaring mesh with no self-serve platform pushes work onto domains that cannot handle it, silos." },
+            { op: "Rebrand without ownership", avg: "same dumps, new name", avgTone: "bad", why: "Renaming existing tables 'data products' with no owner or SLO is mesh in name only." },
+          ]}
+        />
+      </Block>
+
+      <Block eyebrow="the middle most land on" title="Central platform + embedded ownership + contracts">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Most companies need neither full mesh nor a pure central lake; they land in between. A central
+          platform team owns shared infra and paved roads, domains own their own pipelines and data
+          products on top, and <strong>data contracts</strong> define the interfaces between them. You get
+          domain accountability without every team running its own stack, and central leverage without
+          being the bottleneck.
+        </p>
+        <Callout kind="note" title="What the interviewer is listening for">
+          The signal is that you treat this as organizational design, not a product to install. Leading
+          with Conway's law, your data architecture will mirror your team boundaries, and landing on
+          "central platform plus embedded domain ownership plus contracts" beats reciting the four
+          principles off a slide.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="probe deeper" title="The follow-up chain">
+        <div className="space-y-3 text-sm">
+          <p className="text-ink-dim leading-relaxed">
+            <strong>We have three engineers. Should we do data mesh?</strong> No. Mesh solves a scaling
+            bottleneck you do not have yet, with three engineers a central platform is faster and cheaper.
+            I would revisit mesh when many domains are queuing behind one overloaded data team.
+          </p>
+          <p className="text-ink-dim leading-relaxed">
+            <strong>Our teams renamed their exports "data products." Are we doing mesh?</strong> That is the
+            rebrand trap, not mesh. A data product needs an owner, an SLO, discoverability, and
+            interoperability. Without ownership and a self-serve platform underneath, you have silos with
+            nicer names.
+          </p>
+          <p className="text-ink-dim leading-relaxed">
+            <strong>How do you stop domains from drifting into incompatible silos?</strong> Federated
+            computational governance: global standards for identifiers, formats, and compliance, enforced
+            as code on the shared platform, plus data contracts between producers and consumers. Autonomy
+            inside the guardrails, not instead of them.
+          </p>
+          <p className="text-ink-dim leading-relaxed">
+            <strong>Why do you keep bringing up Conway's law?</strong> Because architecture follows org
+            structure whether you plan it or not. Mesh is fundamentally a decision about who owns what, so I
+            design the team boundaries and ownership first and let the technical topology follow, rather
+            than imposing a topology the org cannot staff.
+          </p>
+        </div>
+      </Block>
+
+      <Block eyebrow="say it cleanly" title="The interview answer">
+        <Callout kind="tip" title="The 30-second version">
+          "Data mesh is four principles: domain ownership of data, data as a product, a self-serve
+          platform, and federated computational governance. A data product is discoverable, trustworthy,
+          interoperable, and owned, not a dumped table. Mesh fits when a central team has become the
+          bottleneck across many domains and the platform is mature; it fails in small orgs, without a
+          platform, or as a rebrand with no ownership. Most companies land in the middle: central platform,
+          embedded domain ownership, contracts between them. It is org design, so I lead with Conway's law."
+        </Callout>
+        <Callout kind="note" title="The 2-minute expansion">
+          "Mesh is a response to the central-team bottleneck at organizational scale. The four principles
+          are domain ownership (the teams that produce data own it), data as a product (built for
+          consumers, not dumped), a self-serve platform (central paved-road tooling so domains do not
+          reinvent infra), and federated computational governance (global rules for interoperability and
+          compliance, enforced as code). They deliberately pull both ways: decentralize ownership but
+          centralize the platform and the rules. The load-bearing idea is the data product, which must be
+          discoverable, trustworthy with SLOs and lineage, interoperable, and owned, otherwise it is just a
+          renamed export, which is the most common failure mode. Mesh is right when many domains queue
+          behind one overloaded team and there is a mature platform to build on; it is wrong for a small
+          org with no bottleneck, or as a reorg with no self-serve tooling, or as a pure rebrand. In
+          practice most companies land in a pragmatic middle: a central platform team, domain-embedded
+          ownership of pipelines and products, and data contracts defining the interfaces. And I frame the
+          whole thing with Conway's law, because the architecture will mirror the org chart, so I decide
+          ownership and team boundaries first and let the topology follow."
+        </Callout>
+      </Block>
+    </>
+  );
+}
+
+/* ── Well-Architected & consulting mode ───────────────────────── */
+function WellArch() {
+  return (
+    <>
+      <Lede>
+        Asked to review or design a platform, the AWS Well-Architected Framework is the checklist that
+        keeps the answer complete and the consulting posture that keeps it credible. Name the six pillars,
+        map each to a concrete data decision, and lead with discovery questions instead of a favorite
+        architecture.
+      </Lede>
+
+      <Block eyebrow="the six pillars" title="Mapped to data-platform decisions">
+        <OpTable
+          cols={["Pillar", "Data-platform decision", "", "Concretely"]}
+          rows={[
+            { op: "Operational excellence", avg: "run it as code, observe it", avgTone: "good", why: "IaC (Terraform / CDK), runbooks, pipeline SLIs and dashboards. Deploy and recover repeatably." },
+            { op: "Security", avg: "least privilege, encrypt, govern", avgTone: "good", why: "Lake Formation fine-grained access, KMS encryption, IAM least privilege, PII classification and masking." },
+            { op: "Reliability", avg: "survive failure, recover data", avgTone: "good", why: "Idempotent replay, partitioned backfills, cross-region DR, immutable raw so you can reprocess." },
+            { op: "Performance efficiency", avg: "right engine, right layout", avgTone: "ok", why: "Columnar formats, partition pruning, right-sized compute, the sizing chain, spill avoidance." },
+            { op: "Cost optimization", avg: "pay for what you use", avgTone: "good", why: "Spot on task fleets, transient / serverless clusters, S3 lifecycle to IA / Glacier, scan reduction." },
+            { op: "Sustainability", avg: "minimize resources burned", avgTone: "ok", why: "Right-sizing, retention policies, and efficient formats cut carbon: less compute and storage per result." },
+          ]}
+        />
+        <Callout kind="tip" title="The pillars are a completeness checklist">
+          Under pressure you forget an angle, usually security or reliability. Walking the six pillars
+          guarantees your platform answer covers ops, security, reliability, performance, cost, and
+          sustainability instead of over-indexing on the one you find fun.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="the specialization" title="The Analytics Lens">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          AWS publishes domain <strong>Lenses</strong> that specialize the framework, and the{" "}
+          <strong>Analytics Lens</strong> applies the six pillars specifically to data lakes, warehouses,
+          and streaming, covering ingestion, cataloging, and the medallion-style layout you already draw.
+          Knowing it exists signals you review platforms against a published standard, not just intuition.
+        </p>
+        <Callout kind="note" title="What the interviewer is listening for">
+          The signal is structured completeness plus judgment: the six pillars as a checklist, mapped to
+          real data decisions, not recited as trivia. Bonus points for naming the Analytics Lens and for
+          refusing to give an architecture before asking what problem it must solve.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="consulting mode" title="Discovery questions before architecture">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          The other half of this topic is posture. A ProServe or partner-style architect does not open with
+          an architecture; they open with discovery questions, then reason to a recommendation.
+        </p>
+        <CodeBlock
+          title="text"
+          lang="text"
+          code={`before proposing anything, ask:
+  WORKLOADS   -> batch or streaming? SQL/BI or Spark/ML? what latency SLA?
+  SCALE       -> data volume, growth, query concurrency?
+  TEAM        -> platform engineers? Spark skills? or SQL-only?
+  COST        -> budget envelope? steady or spiky spend?
+  COMPLIANCE  -> PII, GDPR/CCPA, residency, audit needs?
+then: decision tree over dogma -> recommendation -> stakeholder alignment`}
+        />
+        <p className="text-ink-dim leading-relaxed mt-2">
+          With those answers the choice usually makes itself: a SQL-only team with spiky BI leans
+          warehouse-and-serverless; a Spark-heavy ML shop with a platform team leans open lakehouse. The
+          deliverable is "it depends, and here is exactly what it depends on", said confidently, not as a
+          dodge.
+        </p>
+        <Callout kind="trap" title="'It depends' must come with the axes">
+          Saying "it depends" and stopping reads as evasion. The consulting version names the dependencies
+          out loud, workload, scale, team, cost, compliance, then commits to a recommendation for the
+          stated constraints. Confidence plus contingency, not one or the other.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="probe deeper" title="The follow-up chain">
+        <div className="space-y-3 text-sm">
+          <p className="text-ink-dim leading-relaxed">
+            <strong>Review this platform for me.</strong> I would not free-associate; I walk the six
+            pillars, operational excellence, security, reliability, performance, cost, sustainability, and
+            check each against the design, which surfaces the gap people skip, usually reliability (no DR,
+            non-idempotent jobs) or security (PII wide open). Structured beats clever here.
+          </p>
+          <p className="text-ink-dim leading-relaxed">
+            <strong>A client asks which warehouse to buy. What is your first move?</strong> Questions, not
+            an answer: workloads and latency SLAs, scale and concurrency, team skills, cost envelope, and
+            compliance. The right platform falls out of those; recommending one before asking is how
+            consultants lose credibility.
+          </p>
+          <p className="text-ink-dim leading-relaxed">
+            <strong>Isn't "it depends" just avoiding the question?</strong> Only if you stop there. I name
+            exactly what it depends on, the five discovery axes, then commit to a recommendation for the
+            constraints as stated, and flag what would change my mind. That is judgment, not evasion.
+          </p>
+          <p className="text-ink-dim leading-relaxed">
+            <strong>Where do most data platforms fail Well-Architected?</strong> Reliability and cost:
+            jobs that are not idempotent so they cannot be safely replayed, no DR or backfill story, and
+            compute left always-on with no spot or lifecycle. Security's PII exposure is the other common
+            miss. The pillars exist precisely to catch those blind spots.
+          </p>
+        </div>
+      </Block>
+
+      <Block eyebrow="say it cleanly" title="The interview answer">
+        <Callout kind="tip" title="The 30-second version">
+          "I review platforms against the six Well-Architected pillars, operational excellence, security,
+          reliability, performance efficiency, cost optimization, and sustainability, mapped to concrete
+          data decisions: IaC and runbooks, Lake Formation and KMS, idempotent replay and DR, columnar
+          layout and right-sized compute, spot and lifecycle, and retention. The Analytics Lens
+          specializes it for data. And I work in consulting mode: discovery questions first, workloads,
+          scale, team, cost, compliance, then a decision tree to a recommendation, not a favorite
+          architecture."
+        </Callout>
+        <Callout kind="note" title="The 2-minute expansion">
+          "Well-Architected gives me a completeness checklist so I do not over-index on the fun pillar and
+          forget security or reliability. I map each pillar to a data decision: operational excellence is
+          IaC, runbooks, and pipeline SLIs; security is Lake Formation fine-grained access, KMS, least
+          privilege, and PII masking; reliability is idempotent replay, partitioned backfills, DR, and
+          immutable raw; performance efficiency is columnar formats, pruning, and right-sized compute from
+          the sizing chain; cost optimization is spot on task fleets, transient and serverless clusters,
+          lifecycle, and scan reduction; and sustainability is right-sizing and retention, which also cut
+          carbon. The Analytics Lens specializes all of that for lakes, warehouses, and streaming. The
+          second half is posture: in consulting mode I never lead with an architecture. I run discovery
+          first, workloads and latency SLAs, scale and concurrency, team skills, cost envelope, and
+          compliance, then use a decision tree rather than dogma and align stakeholders. So my answer to
+          almost any design question is a disciplined 'it depends', where I name the axes it depends on and
+          still commit to a recommendation for the constraints as stated."
+        </Callout>
+      </Block>
+    </>
+  );
+}
+
+/* ── The trap bank ────────────────────────────────────────────── */
+function TrapCard({ n, quote, bait, dodge, signal }) {
+  return (
+    <div className="rounded-lg border border-line bg-surface-2 p-3.5 mb-3">
+      <div className="flex items-start gap-2.5 mb-2.5">
+        <span className="font-mono text-[11px] leading-5" style={{ color: ACCENT }}>
+          {n}
+        </span>
+        <p className="text-ink font-medium leading-snug">&ldquo;{quote}&rdquo;</p>
+      </div>
+      <div className="space-y-1.5 text-sm text-ink-dim leading-relaxed pl-6">
+        <p>
+          <span className="font-mono text-[10px] uppercase tracking-wider text-ink-faint mr-1.5">the bait</span>
+          {bait}
+        </p>
+        <p>
+          <span className="font-mono text-[10px] uppercase tracking-wider mr-1.5" style={{ color: ACCENT }}>the dodge</span>
+          {dodge}
+        </p>
+        <p>
+          <span className="font-mono text-[10px] uppercase tracking-wider text-ink-faint mr-1.5">the signal</span>
+          {signal}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function TrapBank() {
+  return (
+    <>
+      <Lede>
+        Some interviewer lines are bait. They sound like innocent questions but reward the junior reflex,
+        agree, over-build, or over-promise. This is a bank of ten, each with the bait that makes candidates
+        faceplant, the dodge that scores, and the signal the interviewer is quietly grading.
+      </Lede>
+
+      <Block eyebrow="traps 1-5" title="The over-build and over-promise baits">
+        <TrapCard
+          n="1"
+          quote="We need real-time."
+          bait="Candidates jump straight to Kafka and Flink to sound impressive."
+          dodge="'What end-to-end latency does the business actually need? Most real-time asks are satisfied by a 5 to 15 minute micro-batch at a fraction of the cost and on-call load. I reserve true streaming for a stated sub-minute SLA.'"
+          signal="Do you interrogate the requirement and default to batch, or buy complexity on a vibe?"
+        />
+        <TrapCard
+          n="2"
+          quote="Isn't the lakehouse just marketing?"
+          bait="Agree cynically, or gush that it replaces everything."
+          dodge="'There is a real core: ACID table formats, Iceberg, Delta, Hudi, bring transactions, schema evolution, and row-level deletes to open files on object storage, which raw Parquet cannot do. The marketing is the totalizing claims; the table format is genuine.'"
+          signal="Can you separate the substantive capability from the hype?"
+        />
+        <TrapCard
+          n="3"
+          quote="Why not just put everything in Snowflake?"
+          bait="Cave and agree, or reflexively bash Snowflake."
+          dodge="'Snowflake is excellent for SQL and BI. But heavy Spark/ML wants a programmatic engine, open formats avoid lock-in, streaming and serving fit a lake, and warehouse compute is pricey always-on. Usually the answer is both: lake for engineering, warehouse for BI.'"
+          signal="Do you know a warehouse is not a processing engine, and can you argue it without dogma?"
+        />
+        <TrapCard
+          n="4"
+          quote="Can you guarantee exactly-once?"
+          bait="Say 'yes' confidently."
+          dodge="'End-to-end exactly-once is largely a myth. What I engineer is effectively-once: at-least-once delivery plus an idempotent sink and a checkpoint, so duplicates are harmless. That is the honest, robust guarantee.'"
+          signal="Do you understand delivery semantics, or promise magic?"
+        />
+        <TrapCard
+          n="5"
+          quote="Should we adopt data mesh?"
+          bait="'Yes, it is the modern way.'"
+          dodge="'It depends on org scale. Mesh solves a central-team bottleneck across many domains and needs a mature self-serve platform. In a small org, or without that platform, it adds overhead or becomes a rebrand. It is an org-design decision, not a tool.'"
+          signal="Do you treat mesh as organizational, and resist cargo-culting?"
+        />
+      </Block>
+
+      <Block eyebrow="traps 6-10" title="The false-simplicity baits">
+        <TrapCard
+          n="6"
+          quote="Just add more nodes, right?"
+          bait="'Sure, scale horizontally.'"
+          dodge="'Not if the bottleneck is skew or spill. If one key holds most of the data, or partitions are too big and spilling to disk, more nodes do not help, I fix the data distribution and partition count first, then scale.'"
+          signal="Do you diagnose before scaling, or throw hardware at a design problem?"
+        />
+        <TrapCard
+          n="7"
+          quote="Kafka or Kinesis, quick."
+          bait="Blurt a favorite."
+          dodge="'Depends on the team. Kinesis is managed, AWS-native, and fast to stand up with less to operate; Kafka or MSK is more powerful, portable, and higher-throughput but heavier to run. Small AWS-native team, Kinesis; high scale or multi-cloud with platform muscle, Kafka.'"
+          signal="Do you choose on constraints, or on brand loyalty?"
+        />
+        <TrapCard
+          n="8"
+          quote="It's only a WHERE clause, why is it slow?"
+          bait="Shrug and blame the engine."
+          dodge="'Because the filter is not being pushed down or pruned. If the column is not partitioned or the format is not columnar, the engine scans everything. I check partition pruning, predicate pushdown, and file layout before touching the query text.'"
+          signal="Do you reason about scan and pruning, or treat SQL as opaque?"
+        />
+        <TrapCard
+          n="9"
+          quote="We'll save money by running everything on spot."
+          bait="Agree, spot is cheap."
+          dodge="'Spot on task nodes, yes, up to about 90% off. But core and master on spot risk losing HDFS and shuffle data mid-job and failing the whole run. I keep those on-demand and put the discount where reclamation is safe.'"
+          signal="Do you know where spot is safe versus catastrophic?"
+        />
+        <TrapCard
+          n="10"
+          quote="Schema-on-read means we can skip modeling."
+          bait="'Yes, just dump JSON and figure it out later.'"
+          dodge="'Schema-on-read defers enforcement, it does not remove modeling. Skip it and you get a swamp: undocumented grain, no contracts, unusable joins. I still declare grain, keys, and contracts at the silver boundary, I just enforce them later than a warehouse would.'"
+          signal="Do you understand that flexibility is not an excuse to skip data modeling?"
+        />
+        <Callout kind="note" title="What the interviewer is listening for">
+          Across all ten the meta-signal is the same: do you buy complexity on a vibe, or reason from the
+          constraint? Every dodge interrogates the requirement, defaults to the simpler system, and stays
+          honest about guarantees. That reflex is what they are really scoring.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="probe deeper" title="The follow-up chain">
+        <div className="space-y-3 text-sm">
+          <p className="text-ink-dim leading-relaxed">
+            <strong>You keep saying "it depends." Just pick one.</strong> Fine: for a small AWS-native team
+            with spiky BI I would run Glue plus a warehouse and skip streaming. I name the constraints, then
+            commit. The dodge is not refusing to answer, it is refusing to answer before I know the
+            constraints, then answering.
+          </p>
+          <p className="text-ink-dim leading-relaxed">
+            <strong>The business insists it needs real-time. Are you going to keep pushing back?</strong>{" "}
+            Once, to get a number, end-to-end latency and the cost of being a few minutes stale. If they
+            truly need sub-minute, I build streaming without complaint. Pushing back is to right-size, not
+            to win an argument.
+          </p>
+          <p className="text-ink-dim leading-relaxed">
+            <strong>You said exactly-once is a myth. My last engineer promised it. Were they lying?</strong>{" "}
+            Probably describing effectively-once, idempotent sink plus checkpoint, which is the achievable
+            version, or a single-system guarantee like Kafka transactions. End-to-end across heterogeneous
+            systems, the honest word is effectively-once.
+          </p>
+          <p className="text-ink-dim leading-relaxed">
+            <strong>Which of these do candidates fail most?</strong> "We need real-time" and "exactly-once",
+            both reward over-promising. The fix is the same reflex: ask for the number, then engineer to it
+            honestly rather than agreeing to sound impressive.
+          </p>
+        </div>
+      </Block>
+
+      <Block eyebrow="say it cleanly" title="The interview answer">
+        <Callout kind="tip" title="The 30-second version">
+          "Most of these are bait for the junior reflex, agree, over-build, or over-promise. The through-line
+          dodge is: interrogate the requirement, default to the simpler system, and be honest about
+          guarantees. So 'real-time' gets 'what latency, exactly?', 'exactly-once' gets 'effectively-once',
+          'everything in Snowflake' gets 'warehouse plus lake', and 'just add nodes' gets 'diagnose skew
+          and spill first'. I commit once I know the constraints, not before."
+        </Callout>
+        <Callout kind="note" title="The 2-minute expansion">
+          "The traps split into two families. The over-promise baits, real-time, exactly-once, data mesh,
+          everything-in-Snowflake, tempt you to agree or claim more than is true; the dodge is to ask for
+          the number or the org context and then give the honest, right-sized answer, effectively-once
+          instead of exactly-once, batch by default, mesh only at a real bottleneck, lake-plus-warehouse
+          instead of one. The false-simplicity baits, just add nodes, Kafka-or-Kinesis, a slow WHERE, spot
+          everything, schema-on-read, tempt you to skip diagnosis; the dodge is to name the real mechanism,
+          skew and spill before scaling, constraints before a streaming vendor, pruning and pushdown before
+          the query text, spot only where reclamation is safe, and modeling that is deferred, not skipped.
+          Underneath all ten is one instinct interviewers are grading: reason from the constraint, do not
+          buy complexity or promise magic to sound senior. And 'it depends' is a strong answer only when I
+          name the axes and then commit."
+        </Callout>
+      </Block>
+    </>
+  );
+}
+
+/* ── The red-flag cram sheet ──────────────────────────────────── */
+function RedFlags() {
+  return (
+    <>
+      <Lede>
+        Some answers do not just lose points, they end the interview, because they signal the candidate has
+        never run a real platform. Here are ten phrases that read as instant disqualifiers, why each lands
+        so badly, and the sentence that fixes it.
+      </Lede>
+
+      <Block eyebrow="the cram sheet" title="Ten disqualifiers and their fixes">
+        <OpTable
+          cols={["Red-flag phrase", "Why it ends the interview", "", "The fix phrase"]}
+          rows={[
+            { op: "'We'll stream it' (no freshness SLA)", avg: "buys 24/7 complexity on a vibe", avgTone: "bad", why: "'What end-to-end latency do we need? If minutes are fine, micro-batch.'" },
+            { op: "'coalesce(1) to fix small files'", avg: "funnels all data through one task", avgTone: "bad", why: "'Compact to 128 to 512 MB target files, or repartition, never collapse to one.'" },
+            { op: "'SELECT * in the pipeline'", avg: "scans every column, breaks on schema change", avgTone: "bad", why: "'Project only the columns I need so pruning and pushdown work.'" },
+            { op: "'We'll just rerun it' (no idempotency)", avg: "a rerun double-counts and corrupts", avgTone: "bad", why: "'Overwrite by partition or MERGE on a key so a rerun converges.'" },
+            { op: "Modeling without declaring grain", avg: "ambiguous grain fans out joins", avgTone: "bad", why: "'One row per what? I state the grain before I model.'" },
+            { op: "Treating S3 like a filesystem", avg: "expects cheap renames and appends", avgTone: "bad", why: "'S3 is object storage, no in-place edit; a table format handles updates and deletes.'" },
+            { op: "'Kappa everywhere'", avg: "forces streaming on batch-shaped jobs", avgTone: "bad", why: "'Default batch; stream only where a latency SLA demands it.'" },
+            { op: "Ignoring scan economics", avg: "unaware Athena bills ~$5/TB scanned", avgTone: "bad", why: "'Columnar plus partition pruning, I optimize the bytes scanned.'" },
+            { op: "A migration with no rollback", avg: "no way back when the cutover breaks", avgTone: "bad", why: "'Dual-run old and new, verify parity, keep a rollback path before cutover.'" },
+            { op: "'PII lands wide-open in bronze'", avg: "raw PII with no controls is a breach", avgTone: "bad", why: "'Classify and restrict PII at ingest, Lake Formation, encryption, tokenization.'" },
+          ]}
+        />
+        <Callout kind="note" title="What the interviewer is listening for">
+          Each fix shares one instinct: name the constraint, latency, grain, scan cost, blast radius,
+          sensitivity, before proposing the mechanism. The red flags all skip that step; the fixes all lead
+          with it, which is precisely the operator-versus-tourist signal.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="the pattern behind them" title="Four reflexes to internalize">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          These ten are not random; they cluster into a few reflexes worth carrying:
+        </p>
+        <ul className="text-ink-dim leading-relaxed mb-2 list-disc pl-5 space-y-1.5 text-sm">
+          <li><strong>No stated SLA / requirement</strong>, streaming with no freshness number, Kappa everywhere: buying complexity before naming the need.</li>
+          <li><strong>No idempotency / replay</strong>, "just rerun it", no rollback: not designing for the retry that is guaranteed.</li>
+          <li><strong>No scan / layout discipline</strong>, coalesce(1), SELECT *, ignoring $5/TB: not respecting how bytes cost money.</li>
+          <li><strong>No modeling / governance rigor</strong>, no grain, S3-as-filesystem, PII wide open: skipping the boring correctness and safety work.</li>
+        </ul>
+        <Callout kind="tip" title="One fix reflex behind all ten">
+          Every fix is "state the constraint, then choose the mechanism". Lead with the latency SLA, the
+          grain, the scanned bytes, the rollback plan, or the PII classification, and you cannot say any of
+          the ten red flags, because each one is what you get when you skip that sentence.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="probe deeper" title="The follow-up chain">
+        <div className="space-y-3 text-sm">
+          <p className="text-ink-dim leading-relaxed">
+            <strong>A candidate says "we'll just rerun the job if it fails." Your follow-up?</strong> I ask
+            what happens to already-written rows on the rerun. If they cannot say "nothing, it overwrites
+            the partition or MERGEs on a key", the pipeline double-counts on every retry, and retries are
+            guaranteed. That one answer tells me whether they have run production.
+          </p>
+          <p className="text-ink-dim leading-relaxed">
+            <strong>Why is coalesce(1) such a specific tell?</strong> It fixes the symptom (many files) by
+            destroying parallelism, one task writes everything, so a big job crawls or OOMs. Someone who
+            has hit it in production reaches for compaction or repartition to a target file size, never a
+            funnel to one.
+          </p>
+          <p className="text-ink-dim leading-relaxed">
+            <strong>PII in bronze, isn't raw supposed to be untouched?</strong> Raw immutability is about
+            not editing data, not about leaving it unprotected. PII needs classification, encryption, and
+            access restriction from the moment it lands; wide-open raw PII is a breach and a GDPR/CCPA
+            failure regardless of the medallion story.
+          </p>
+          <p className="text-ink-dim leading-relaxed">
+            <strong>If you had to keep just one of these fixes, which?</strong> Idempotency. A pipeline you
+            cannot safely rerun cannot be backfilled or reprocessed, so the first real incident traps you.
+            Everything else costs money or elegance; non-idempotency costs correctness.
+          </p>
+        </div>
+      </Block>
+
+      <Block eyebrow="say it cleanly" title="The interview answer">
+        <Callout kind="tip" title="The 30-second version">
+          "The disqualifiers all share one flaw: proposing a mechanism before naming the constraint.
+          Streaming with no freshness SLA, coalesce(1) for small files, SELECT * in production, 'we'll just
+          rerun it' with no idempotency, modeling without a grain, treating S3 like a filesystem, Kappa
+          everywhere, ignoring the $5-per-terabyte scan bill, a migration with no rollback, and PII landing
+          wide-open in bronze. The fix for every one is to lead with the constraint, latency, grain, bytes,
+          blast radius, sensitivity, then choose the tool."
+        </Callout>
+        <Callout kind="note" title="The 2-minute expansion">
+          "I group the red flags into four reflexes. No stated requirement: streaming with no freshness SLA
+          or 'Kappa everywhere' buys 24/7 complexity before anyone named a latency need; the fix is 'what
+          end-to-end latency do we need, and if minutes are fine, micro-batch'. No idempotency or replay:
+          'we'll just rerun it' and a migration with no rollback ignore that retries and failed cutovers
+          are guaranteed; the fix is overwrite-by-partition or MERGE, and dual-run with parity checks and a
+          rollback path. No scan or layout discipline: coalesce(1), SELECT *, and ignoring five dollars a
+          terabyte all waste bytes; the fix is compaction to target file sizes, column projection, and
+          columnar plus pruning. And no modeling or governance rigor: no declared grain, treating S3 as a
+          POSIX filesystem, and PII wide open in bronze; the fix is to state the grain, use a table format
+          for updates and deletes, and classify and restrict PII at ingest. The single instinct behind all
+          of them is state the constraint before the mechanism, and if I could keep only one fix it would
+          be idempotency, because a pipeline you cannot safely replay fails you at the first incident."
+        </Callout>
+      </Block>
+    </>
+  );
+}
+
+/* ── Rapid fire · self-test ───────────────────────────────────── */
+const DECK = [
+  { q: "S3 Standard storage, dollars per GB-month?", a: "About $0.023 per GB-month, roughly $23 per TB-month. Storage is cheap; scan and compute dominate the bill.", tag: "numbers" },
+  { q: "Athena pricing model and the number?", a: "About $5 per TB scanned, you pay per byte read, so columnar formats and partition pruning are direct dollars saved.", tag: "numbers" },
+  { q: "Target file size and target Spark partition size?", a: "Output files 128 to 512 MB; Spark partitions 128 to 256 MB. Big enough to amortize task and list overhead, small enough to parallelize.", tag: "numbers" },
+  { q: "Spot discount, and where is it safe on EMR?", a: "Up to about 90% off on-demand. Safe on task nodes (no HDFS data); keep master and core on-demand so reclamation does not lose shuffle data and fail the job.", tag: "numbers" },
+  { q: "Kinesis Data Streams shard limits?", a: "Per shard: 1 MB/s or 1000 records/s ingress, and 2 MB/s egress. You scale throughput by adding shards.", tag: "numbers" },
+  { q: "Parquet+Snappy vs raw CSV, size ratio?", a: "Roughly one third to one fifth of raw. Columnar plus compression, smaller storage and less scanned, the double win.", tag: "numbers" },
+  { q: "Lambda vs Kappa in one breath.", a: "Lambda runs two layers, batch for accuracy, speed for latency, merged at serve, so two codebases. Kappa keeps one streaming pipeline and reprocesses by replaying the log; simpler if you have a durable log and streaming muscle.", tag: "judgment" },
+  { q: "The cluster-sizing chain, start to finish.", a: "Input over a 128 to 256 MB target sets partitions; ~5 cores per executor sets shape; executors times 5 sets cores in flight (parallelism); total work over parallelism times waves sets runtime.", tag: "sizing" },
+  { q: "Name the three idempotent write patterns.", a: "Overwrite the whole partition, MERGE/upsert on a business key, or write to a deterministic path derived from the input. All make a rerun converge instead of double-count.", tag: "judgment" },
+  { q: "What is write-audit-publish (WAP)?", a: "Write data to a staged or hidden snapshot, run quality audits against it, and only publish (flip the pointer) if it passes, so consumers never see bad data. A table-format-friendly quality gate.", tag: "quality" },
+  { q: "State a data SLO with an error budget.", a: "'gold.orders fresh by 06:00 on 99% of business days, measured monthly.' The 1% is the error budget: inside it you ship, once it is burned you freeze and harden.", tag: "operate" },
+  { q: "Snowflake micro-partition size, and why it matters?", a: "50 to 500 MB uncompressed, immutable, columnar, with per-column min/max metadata. Snowflake prunes on that metadata, so there is no small-files problem to hand-tune.", tag: "platforms" },
+  { q: "The four data-mesh principles.", a: "Domain ownership of data, data as a product, self-serve data platform, and federated computational governance. Decentralize ownership, centralize the platform and global rules.", tag: "org" },
+  { q: "The six Well-Architected pillars.", a: "Operational excellence, security, reliability, performance efficiency, cost optimization, and sustainability. Walk them as a completeness checklist on any platform review.", tag: "org" },
+  { q: "Default batch or streaming, and what flips it?", a: "Default batch, bounded, cheapest, reprocessing is a rerun. A concrete sub-minute latency SLA flips it to streaming; most 'real-time' asks survive a 5 to 15 minute micro-batch.", tag: "judgment" },
+  { q: "The medallion zones and the rule for each.", a: "Bronze: raw, immutable, append-only (your replay source). Silver: cleaned, typed, deduped, conformed. Gold: business aggregates and marts for BI and ML.", tag: "pipeline" },
+  { q: "Honest answer to 'can you guarantee exactly-once?'", a: "End-to-end exactly-once is largely a myth. I engineer effectively-once: at-least-once delivery plus an idempotent sink and a checkpoint, so duplicates are harmless.", tag: "judgment" },
+  { q: "Three causes of the small-files problem.", a: "Over-partitioning (grain too fine), streaming micro-batches (a file per trigger), and too many write/shuffle partitions. Fix with right grain, repartition-on-write, and compaction/OPTIMIZE.", tag: "layout" },
+  { q: "Why can't a raw S3 lake honor GDPR's right to be forgotten?", a: "Objects are immutable, there is no row-level delete. A table format (Iceberg/Delta/Hudi) supports DELETE ... WHERE and handles compaction, which is why a serious lake uses one.", tag: "governance" },
+  { q: "Druid vs Pinot vs ClickHouse, one line each.", a: "Druid: Kafka-native real-time OLAP pioneer. Pinot: user-facing analytics at LinkedIn-scale QPS. ClickHouse: fast self-hosted columnar SQL. All serve sub-second aggregations on fresh streams.", tag: "platforms" },
+  { q: "What two failures does a feature store prevent?", a: "Train/serve skew, training and serving read one feature definition instead of two implementations, and point-in-time leakage, via as-of joins so a training row never sees post-label values.", tag: "platforms" },
+  { q: "Why not just put everything in Snowflake?", a: "Heavy Spark/ML wants a programmatic engine, open formats avoid lock-in, streaming and always-on serving fit a lake, and warehouse compute is pricey always-on. Usually run both: lake for engineering, warehouse for BI.", tag: "platforms" },
+  { q: "How do you actually measure table freshness?", a: "Against event-time, not wall-clock: a last-updated watermark or audit table, dbt source freshness, Airflow SLAs, or table-format commit timestamps, compared to a declared deadline.", tag: "operate" },
+  { q: "'EMR vs Snowflake', what is wrong with the question?", a: "It is often a false choice: EMR/Spark is a processing engine for heavy ETL and ML, Snowflake is a warehouse for SQL and BI. Many stacks run Spark into the lake and Snowflake serving on top, different jobs.", tag: "judgment" },
+];
+
+function QuickfireDrill() {
+  return (
+    <>
+      <Lede>
+        Twenty-four cards spanning the whole bench, the dollar and shape anchors, the pipeline-design
+        judgment calls, the platform trade-offs, and the org questions. The rep that works: read the card,
+        answer <strong>out loud</strong> in a sentence or two before revealing, then grade yourself
+        honestly. Shuffle between runs so you drill recall, not card order, and anything you miss twice, go
+        re-read the topic behind it.
+      </Lede>
+      <Try label="rapid fire"><QuickFire accent={ACCENT} deck={DECK} /></Try>
+    </>
+  );
+}
+
 const CONTENT = {
   archstyles: <ArchStyles />,
   ingestiondesign: <IngestionDesign />,
@@ -915,6 +2123,15 @@ const CONTENT = {
   buildbuy: <BuildBuy />,
   governance: <Governance />,
   numbers: <Numbers />,
+  slaops: <SlaOps />,
+  snowbricks: <SnowBricks />,
+  rtolap: <RtOlap />,
+  featurestores: <FeatureStores />,
+  datamesh: <DataMesh />,
+  wellarch: <WellArch />,
+  trapbank: <TrapBank />,
+  redflags: <RedFlags />,
+  quickfire: <QuickfireDrill />,
 };
 
 export default function DataArchitectBench() {

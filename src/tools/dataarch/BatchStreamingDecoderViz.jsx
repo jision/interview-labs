@@ -54,7 +54,7 @@ const RESULTS = {
   microbatch: {
     title: "Micro-batch (Spark Structured Streaming)",
     color: "#38bdf8",
-    why: "An unbounded source handled by small batches every few seconds, one checkpointed engine, far less ops than true streaming. The pragmatic low-latency default when you can't staff 24/7 streaming.",
+    why: "Small checkpointed batches on one engine. For an unbounded stream it delivers minutes-or-better freshness without a 24/7 record-at-a-time stack; for bounded data that must stay fresh, it is simply the same batch job re-run every few minutes.",
   },
   streaming: {
     title: "True streaming (Flink / Kappa)",
@@ -70,18 +70,15 @@ const RESULTS = {
 
 /* Hand-authored decision rules, evaluated top-down, first match wins. */
 function decide(a) {
-  // Seconds of freshness forces a low-latency engine.
+  // Bounded data cannot be streamed; freshness only changes how often you re-run.
+  if (a.volume === "huge") {
+    return a.freshness === "hours" ? "batch" : "microbatch";
+  }
   if (a.freshness === "seconds") {
-    // If accurate reprocessing also matters and the team can run streaming,
-    // a Lambda split (or Kappa with replay) earns its keep.
     if (a.reprocess === "yes") return a.ops === "yes" ? "lambda" : "microbatch";
     return a.ops === "yes" ? "streaming" : "microbatch";
   }
-  // Minutes of freshness -> micro-batch is the sweet spot: low latency, low ops,
-  // and a checkpointed source you can still reprocess. Lambda's two codebases
-  // are not earned until you need seconds.
   if (a.freshness === "minutes") return "microbatch";
-  // Hours of freshness -> default to batch unless latency demands otherwise.
   return "batch";
 }
 

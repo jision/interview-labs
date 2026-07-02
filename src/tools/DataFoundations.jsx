@@ -4,6 +4,7 @@ import { Callout, CodeBlock, Tag } from "../components/ui.jsx";
 import { Lede, OpTable, withAccent } from "../components/layout.jsx";
 import WindowFunctionViz from "./datafound/WindowFunctionViz.jsx";
 import CapPartitionViz from "./datafound/CapPartitionViz.jsx";
+import { QuickFire } from "../components/QuickFire.jsx";
 
 const ACCENT = "#b388ff";
 const { Block, Try } = withAccent(ACCENT);
@@ -17,6 +18,9 @@ const TOPICS = [
   { id: "mapreduce", label: "MapReduce & why Spark", group: "Distributed systems" },
   { id: "columnar", label: "Columnar storage & encoding", group: "Storage internals" },
   { id: "compression", label: "Compression & file sizing", group: "Storage internals" },
+  { id: "acid", label: "Transactions, ACID & isolation", group: "Transactions & consensus" },
+  { id: "consensus", label: "Beyond CAP: the follow-ups", group: "Transactions & consensus" },
+  { id: "quickfire", label: "Rapid fire · self-test", group: "Drill" },
 ];
 
 /* ── Joins, grouping & query plans ────────────────────────────── */
@@ -1011,6 +1015,479 @@ function Compression() {
   );
 }
 
+/* ── Transactions, ACID & isolation ───────────────────────────── */
+function Acid() {
+  return (
+    <>
+      <Lede>
+        Every table-format pitch, Iceberg, Delta, Hudi, leads with "ACID transactions," and this whole track
+        says ACID constantly, so the interview checks whether you can define the four letters{" "}
+        <em>precisely</em>: which anomaly each isolation level permits, how MVCC makes readers and writers
+        coexist, and, the money answer for a data architect, exactly which slice of ACID a lakehouse table
+        actually gives you.
+      </Lede>
+
+      <Block eyebrow="the four letters" title="A, C, I, D, defined properly">
+        <OpTable
+          cols={["Letter", "Guarantee", "", "How it is implemented"]}
+          rows={[
+            { op: "Atomicity", avg: "all or nothing", avgTone: "good", why: "A transaction's writes apply completely or not at all. The write-ahead log (WAL) records intent first, so a crash mid-transaction is rolled back and no half-applied state survives." },
+            { op: "Consistency", avg: "constraints hold", avgTone: "ok", why: "Every committed transaction moves the database from one valid state to another: foreign keys, uniqueness, CHECKs. Partly the application's job, the weakest-defined letter." },
+            { op: "Isolation", avg: "some serial order", avgTone: "good", why: "Concurrent transactions behave as if they ran one after another in SOME order. Comes in degrees, the isolation levels below, and the degrees are the whole interview." },
+            { op: "Durability", avg: "commit survives crash", avgTone: "good", why: "Once COMMIT returns, the data survives power loss: fsync the WAL to stable storage, then replicate it to other nodes for machine loss." },
+          ]}
+        />
+        <Callout kind="note" title="Isolation is where the questions live">
+          A, C, and D are one sentence each. Isolation is a spectrum with named anomalies at every rung, and
+          that ladder, not the acronym, is what a senior candidate is expected to walk without notes.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="the anomalies ladder" title="Isolation levels vs the anomalies they permit">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Each standard isolation level is defined by which <strong>anomalies</strong> it rules out. Learn the
+          anomalies first; the levels are just lines drawn across them:
+        </p>
+        <OpTable
+          cols={["Anomaly", "First blocked at", "", "What happens"]}
+          rows={[
+            { op: "Dirty read", avg: "READ COMMITTED", avgTone: "good", why: "You read another transaction's UNCOMMITTED write; it may roll back, so you acted on data that never officially existed." },
+            { op: "Non-repeatable read", avg: "REPEATABLE READ", avgTone: "ok", why: "You read the same row twice in one transaction and get different values, because another transaction committed in between." },
+            { op: "Phantom read", avg: "SERIALIZABLE", avgTone: "ok", why: "You re-run the same range query and NEW rows appear that match the predicate. The SQL standard only guarantees blocking phantoms at SERIALIZABLE." },
+            { op: "Lost update", avg: "varies by engine", avgTone: "bad", why: "Two read-modify-write transactions race; the second commit silently overwrites the first. Fix with SELECT FOR UPDATE, an atomic UPDATE, or a level that detects the conflict." },
+            { op: "Write skew", avg: "SERIALIZABLE", avgTone: "bad", why: "Two transactions read overlapping data, then write DISJOINT rows. No write-write conflict fires, yet the combined result matches no serial order." },
+          ]}
+        />
+        <CodeBlock
+          title="text"
+          lang="text"
+          code={`anomaly              READ         READ        REPEATABLE    SERIALIZABLE
+                     UNCOMMITTED  COMMITTED   READ
+dirty read           possible     blocked     blocked       blocked
+non-repeatable read  possible     possible    blocked       blocked
+phantom read         possible     possible    possible*     blocked
+write skew           possible     possible    possible      blocked
+
+* the standard permits phantoms at REPEATABLE READ; Postgres's
+  REPEATABLE READ is really snapshot isolation, which happens to
+  block phantoms too, but write skew still slips through.`}
+        />
+        <Callout kind="note" title="What the interviewer is listening for">
+          Precise anomaly definitions are the scoring signal: most candidates can say "dirty read," far fewer
+          can define write skew or name the level that stops it. Knowing your engine's default (Postgres and
+          Oracle run READ COMMITTED; MySQL InnoDB runs REPEATABLE READ) separates doc-readers from operators.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="how readers never block writers" title="MVCC: multi-version concurrency control">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Modern engines do not make readers wait for writers. <strong>MVCC</strong> keeps multiple{" "}
+          <em>versions</em> of each row: an UPDATE appends a new version instead of overwriting, and every
+          transaction reads through a <strong>snapshot</strong>, a rule for which versions it is allowed to
+          see. Readers never block writers, writers never block readers; only write-write conflicts need locks.
+        </p>
+        <CodeBlock
+          title="text"
+          lang="text"
+          code={`UPDATE does not overwrite, it appends a new version:
+
+  row versions of account 42:
+    v1 (balance=100)  created by tx 900, superseded by tx 950
+    v2 (balance=80)   created by tx 950
+
+  each transaction gets a SNAPSHOT: "the set of txs committed before I started"
+  visibility rule: show the newest version whose creator is in my snapshot
+
+  Postgres READ COMMITTED : a fresh snapshot per STATEMENT
+  Postgres REPEATABLE READ: ONE snapshot for the whole transaction
+                            (this is snapshot isolation by another name)`}
+        />
+        <Callout kind="tip" title="The one-liner, and its cost">
+          "Readers never block writers" is the MVCC one-liner. The cost is garbage: dead row versions pile up
+          and must be reclaimed (VACUUM in Postgres, purge in InnoDB), which is why a long-running transaction
+          that pins an old snapshot can bloat a busy table.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="the subtle one" title="Snapshot isolation and write skew">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          <strong>Snapshot isolation (SI)</strong>: every transaction reads from one consistent snapshot, and
+          at commit only <em>write-write</em> conflicts on the same rows are detected (first committer wins).
+          It feels serializable, and it is <strong>not</strong>. The gap is <strong>write skew</strong>, the
+          two-doctors-on-call example:
+        </p>
+        <CodeBlock
+          title="text"
+          lang="text"
+          code={`rule: at least ONE doctor must stay on call. currently alice AND bob are.
+
+  T1: SELECT count(*) FROM oncall WHERE on_duty;   -- sees 2, "safe to leave"
+  T2: SELECT count(*) FROM oncall WHERE on_duty;   -- sees 2, "safe to leave"
+  T1: UPDATE oncall SET on_duty = false WHERE dr = 'alice';
+  T2: UPDATE oncall SET on_duty = false WHERE dr = 'bob';
+  T1: COMMIT;  T2: COMMIT;    -- different rows -> NO write-write conflict
+
+  result: ZERO doctors on call. no serial order produces this.
+  snapshot isolation allows it; SERIALIZABLE aborts one of them.`}
+        />
+        <p className="text-ink-dim leading-relaxed mt-2">
+          True serializability comes two ways: pessimistically, with <strong>two-phase locking</strong> (hold
+          read and write locks until commit, pay in blocking and deadlocks), or optimistically, with{" "}
+          <strong>SSI</strong> (serializable snapshot isolation): run on snapshots, track read-write
+          dependencies, and abort a transaction when a dangerous pattern forms. Postgres SERIALIZABLE is SSI,
+          so the application must be ready to retry serialization failures.
+        </p>
+        <Callout kind="trap" title="'REPEATABLE READ' in Postgres is snapshot isolation">
+          When someone says "we run REPEATABLE READ so we are safe," the follow-up is write skew: SI blocks
+          dirty, non-repeatable, and phantom reads, and still permits two transactions to jointly violate an
+          invariant that each one checked. Only SERIALIZABLE, or an explicit lock, closes that hole.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="the lakehouse bridge" title="What 'ACID' means in Iceberg, and what it does not">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Lakehouse "ACID" is real but narrow: <strong>single-table snapshot isolation via optimistic
+          concurrency on the catalog pointer</strong>. A writer stages new data and metadata files, then
+          commits with one atomic compare-and-swap of the table's current-metadata pointer in the catalog. If
+          another writer swapped first, the commit fails, conflicts are re-checked, and the writer retries:
+        </p>
+        <CodeBlock
+          title="text"
+          lang="text"
+          code={`an Iceberg commit = optimistic concurrency on ONE pointer:
+
+  1. read current table metadata            (snapshot s41)
+  2. write new data files + a new metadata file  (would-be s42)
+  3. atomic compare-and-swap in the CATALOG:
+        "if current == s41 then set current = s42"
+  4. CAS failed? someone committed first -> re-validate conflicts, retry
+
+  scope of the guarantee: ONE table, ONE commit at a time.
+  no BEGIN ... work ... COMMIT sessions. no cross-table atomicity.`}
+        />
+        <p className="text-ink-dim leading-relaxed mt-2">
+          So "Iceberg gives me ACID like Postgres" is wrong in two ways. <strong>Scope:</strong> there are no
+          multi-table and no interactive transactions, a fact table and its dimension are two independent
+          commits, and a reader can see one updated and not the other. <strong>Isolation model:</strong> it is
+          snapshot isolation with optimistic conflict detection, not serializable sessions; concurrent writers
+          do not block each other, they fail at commit time and retry, and long-running jobs can lose that race
+          repeatedly.
+        </p>
+        <Callout kind="tip" title="Say the scope out loud">
+          The senior phrasing: "Iceberg gives me atomic, isolated commits per table, snapshot isolation for
+          readers, and durability from S3, which is exactly enough for concurrent batch writers, and it is not
+          a substitute for an OLTP database's multi-statement, multi-table transactions."
+        </Callout>
+      </Block>
+
+      <Block eyebrow="probe deeper" title="The follow-up chain">
+        <div className="space-y-3 text-sm">
+          <p className="text-ink-dim leading-relaxed">
+            <strong>What does your database run by default, and what can still go wrong there?</strong>{" "}
+            Postgres defaults to READ COMMITTED: each statement gets a fresh snapshot, so non-repeatable reads
+            and phantoms are possible inside one transaction, and read-modify-write needs SELECT FOR UPDATE or
+            an atomic UPDATE to avoid lost updates.
+          </p>
+          <p className="text-ink-dim leading-relaxed">
+            <strong>Why exactly is snapshot isolation not serializable?</strong> It only detects write-write
+            conflicts. Write skew is two transactions reading overlapping state and writing disjoint rows, so
+            no conflict fires, yet the combined result matches no serial order, the two-doctors case.
+          </p>
+          <p className="text-ink-dim leading-relaxed">
+            <strong>How do you get serializability without locking everything?</strong> SSI: run optimistically
+            on snapshots, track read-write dependencies between transactions, and abort one when a dangerous
+            cycle pattern appears. Postgres SERIALIZABLE does this; the app retries serialization failures.
+          </p>
+          <p className="text-ink-dim leading-relaxed">
+            <strong>You must update a fact table and its dimension atomically in Iceberg. What do you do?</strong>{" "}
+            There is no multi-table transaction, so I design around it: commit both, then flip consumers with a
+            single atomic signal, a view swap or a pipeline watermark, and make each write idempotent so a
+            retry after a mid-pipeline failure converges instead of corrupting.
+          </p>
+        </div>
+      </Block>
+
+      <Block eyebrow="say it cleanly" title="The interview answer">
+        <Callout kind="tip" title="The 30-second version">
+          "Atomicity is all or nothing, enforced by the write-ahead log and rollback. Consistency means the
+          constraints still hold after commit. Isolation means concurrent transactions appear to run in some
+          serial order, in degrees: READ COMMITTED stops dirty reads, REPEATABLE READ stops non-repeatable
+          reads, and only SERIALIZABLE stops phantoms and write skew. Durability means a commit survives a
+          crash via fsync and replication. And in a lakehouse, ACID means single-table snapshot isolation
+          through an atomic catalog pointer swap, not Postgres-style transactions."
+        </Callout>
+        <Callout kind="note" title="The 2-minute expansion">
+          "The interesting letter is isolation, because it is a spectrum defined by anomalies: dirty reads,
+          non-repeatable reads, phantoms, lost updates, and write skew, and each standard level draws a line
+          through that list. Modern engines implement the levels with MVCC: updates append row versions, every
+          transaction reads through a snapshot, so readers never block writers, and Postgres READ COMMITTED is
+          just a snapshot per statement while REPEATABLE READ is one snapshot per transaction, which is
+          snapshot isolation. Snapshot isolation is the subtle one: it feels serializable but permits write
+          skew, two transactions read overlapping data and write disjoint rows, like two doctors who each see
+          'two on call' and both sign off. Closing that needs SERIALIZABLE, either two-phase locking or SSI
+          with retries. For the lakehouse I am explicit about scope: Iceberg gives ACID per table via
+          optimistic concurrency, stage files, then compare-and-swap the catalog pointer, retry on conflict.
+          That is atomic commits and snapshot-isolated reads for one table. There are no multi-table or
+          interactive transactions, so saying 'Iceberg is ACID like Postgres' is wrong on both scope and
+          isolation model, and cross-table atomicity has to be designed in the pipeline, not assumed from the
+          format."
+        </Callout>
+      </Block>
+    </>
+  );
+}
+
+/* ── Beyond CAP: the follow-ups ───────────────────────────────── */
+function Consensus() {
+  return (
+    <>
+      <Lede>
+        Nailing CAP earns you the follow-ups, and the follow-ups are where senior candidates separate: the
+        consistency ladder below "strong vs eventual," why 2PC blocks and what replaces it, quorum arithmetic
+        you can do out loud, Raft in one breath, and the exactly-once question every streaming interview ends
+        with.
+      </Lede>
+
+      <Block eyebrow="the ladder" title="Consistency models, strongest to weakest">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          "Strong vs eventual" is a caricature. The real ladder has rungs, each a one-liner, and the skill is
+          naming the <em>weakest</em> rung your feature actually needs:
+        </p>
+        <OpTable
+          cols={["Model", "One-line guarantee", "", "Where it shows up"]}
+          rows={[
+            { op: "Linearizable", avg: "one-copy illusion", avgTone: "good", why: "Every operation appears to take effect at a single instant between request and response; reads never return stale data. etcd (leader / ReadIndex reads), DynamoDB strongly consistent reads. ZooKeeper linearizes writes, but its reads can be stale unless you call sync() first." },
+            { op: "Sequential", avg: "one agreed order", avgTone: "ok", why: "All clients observe the SAME interleaving of operations, but that order may lag real time. Mostly a theory rung between linearizable and causal." },
+            { op: "Causal", avg: "causes before effects", avgTone: "ok", why: "Operations that depend on each other appear in order everywhere; truly concurrent ones may differ. A reply never appears before its parent comment." },
+            { op: "Session guarantees", avg: "sane for one user", avgTone: "good", why: "Read-your-writes (I see my own update) and monotonic reads (my view never goes backward in time). Usually what a product actually needs; sticky routing or session tokens." },
+            { op: "Eventual", avg: "converges, eventually", avgTone: "ok", why: "Stop writing and all replicas agree, with no bound on when. DNS, cross-region replication, Dynamo-style stores at low R and W." },
+          ]}
+        />
+        <Callout kind="note" title="What the interviewer is listening for">
+          Matching a model to a requirement is the scoring signal: "this profile page needs read-your-writes,
+          not linearizability" scores, while demanding strong consistency everywhere reads as junior because it
+          ignores the latency and availability bill PACELC already taught you about.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="coordinating writes" title="2PC vs sagas, and the pipeline analog">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          <strong>Two-phase commit</strong> makes several nodes commit together: the coordinator asks everyone
+          to <em>prepare</em> (vote yes and hold locks), then broadcasts <em>commit</em>. Its famous flaw is
+          the window between the phases:
+        </p>
+        <CodeBlock
+          title="text"
+          lang="text"
+          code={`2PC:   coordinator                participants
+          |---- PREPARE? ----------->|   each votes yes and LOCKS its rows
+          |<--- yes, yes ------------|
+          |---- COMMIT ------------->|   apply + release locks
+
+the flaw: coordinator crashes AFTER the yes votes:
+  voted yes  -> a participant may not unilaterally abort
+  no commit  -> it may not unilaterally commit
+  => participants BLOCK, holding locks, until the coordinator returns.
+
+pipelines choose the other road: idempotent stages + replay
+  each stage overwrites its output partition or MERGEs by key,
+  a failed run is simply re-run, and a duplicate run changes nothing.`}
+        />
+        <p className="text-ink-dim leading-relaxed mt-2">
+          That blocking, plus a synchronous round-trip to every participant, is why <strong>cross-service 2PC
+          is avoided</strong>. The microservice answer is the <strong>saga</strong>: a chain of local
+          transactions, each with a <em>compensating action</em>, and on failure you run the compensations in
+          reverse (refund the charge, release the inventory). You trade isolation away, intermediate states
+          are visible. The data-pipeline analog is the same philosophy: instead of distributed transactions,
+          make every stage <strong>idempotent</strong> and get atomicity by <strong>replay</strong>.
+        </p>
+        <Callout kind="trap" title="2PC is not consensus">
+          2PC needs every participant plus the coordinator alive; consensus protocols like Raft make progress
+          with any majority. That is why the coordinator's own state is often kept in a Raft-replicated store,
+          2PC on top, consensus underneath.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="worked drills" title="Quorum arithmetic you should do out loud">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          Interviewers love live quorum math because it is fast and unfakeable. With N replicas, W write acks,
+          and R read acks, the overlap rule is <strong>R + W &gt; N</strong>. Run the drills:
+        </p>
+        <CodeBlock
+          title="text"
+          lang="text"
+          code={`N = 3 replicas, majority = 2
+
+  W=2, R=2 : R+W = 4 > N  -> every read set overlaps every write set.
+             tolerates 1 node down for reads AND writes. the balanced default.
+
+  W=3, R=1 : reads are fast, any single replica is guaranteed current,
+             but ONE dead node blocks every write. writes are fragile.
+
+  W=1, R=1 : fastest possible. R+W = 2 <= N -> no overlap guarantee,
+             stale reads possible. eventual consistency, by the numbers.
+
+sloppy quorum + hinted handoff (Dynamo-style):
+  during a partition, write to ANY W reachable nodes, not the designated
+  home nodes, and hand the data back when they recover (hinted handoff).
+  stays available, but the overlap math no longer holds:
+  even R+W > N can serve stale reads until handoff completes.`}
+        />
+        <Callout kind="note" title="Say the trade, not just the formula">
+          High W buys durable writes at write-latency cost; high R buys current reads at read-latency cost;
+          sloppy quorum buys availability during partitions at the cost of the overlap guarantee itself. Each
+          knob is PACELC in concrete integers.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="how leaders are chosen" title="Raft in one interview answer">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          <strong>Raft</strong> is the consensus algorithm you can actually explain: nodes elect a{" "}
+          <strong>leader</strong> by majority vote (randomized election timeouts break ties), all writes go
+          through the leader and are appended to a <strong>replicated log</strong>, and an entry is{" "}
+          <strong>committed once a majority acks</strong> it. If the leader dies, a new election runs, and
+          only a candidate whose log contains every committed entry can win, because any two majorities
+          overlap:
+        </p>
+        <CodeBlock
+          title="text"
+          lang="text"
+          code={`Raft, one breath:
+  follower times out -> becomes candidate -> majority vote elects a LEADER
+  clients write to the leader -> leader appends the entry to its LOG
+  leader replicates to followers -> COMMITTED once a majority acks
+  leader dies -> new election; overlapping majorities guarantee the
+                 winner already holds every committed entry
+
+  2f+1 nodes tolerate f failures (5 nodes ride out 2).`}
+        />
+        <Callout kind="tip" title="You already run this family">
+          ZooKeeper runs ZAB and etcd runs Raft, same family, and they sit under the systems that coordinate
+          your platform: Kafka's KRaft controller quorum, Kubernetes control planes, HA metastores, and the
+          databases backing your Iceberg catalog's atomic pointer swap. "My catalog's compare-and-swap
+          ultimately rests on a consensus log" is a strong systems-level connection to make.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="the delivery question" title="Exactly-once vs effectively-once">
+        <p className="text-ink-dim leading-relaxed mb-2">
+          End-to-end <strong>exactly-once delivery is impossible</strong>: if an ack is lost, the sender cannot
+          know whether the message arrived, so it must retry, and a retry can duplicate. What you can build is{" "}
+          <strong>effectively-once processing</strong>: duplicates may arrive, but their <em>effect</em> is
+          applied once.
+        </p>
+        <ul className="text-ink-dim leading-relaxed mb-2 list-disc pl-5 space-y-1.5 text-sm">
+          <li><strong>Idempotent writes</strong>, key every record and upsert or MERGE by key, so applying a duplicate is a no-op.</li>
+          <li><strong>Transactional sinks</strong>, commit the output and the input offsets atomically (Kafka transactions, Flink two-phase sink commits), so replay resumes exactly where the last commit landed.</li>
+          <li><strong>Dedup by event id</strong>, keep a window of processed ids and drop repeats at the door.</li>
+          <li><strong>Fencing tokens</strong>, a monotonically increasing token issued with each lock or lease; the storage layer rejects writes carrying an older token, so a paused or "zombie" writer that lost its lease cannot corrupt state when it wakes up.</li>
+        </ul>
+        <Callout kind="trap" title="Answer the question they meant">
+          When asked "does Kafka give exactly-once?", the trap is a flat yes or no. The precise answer: delivery
+          is at-least-once with retries; Kafka's idempotent producer and transactions give effectively-once{" "}
+          <em>processing</em> within a Kafka-to-Kafka pipeline; crossing into an external system puts the burden
+          back on idempotent, fenced sinks.
+        </Callout>
+      </Block>
+
+      <Block eyebrow="probe deeper" title="The follow-up chain">
+        <div className="space-y-3 text-sm">
+          <p className="text-ink-dim leading-relaxed">
+            <strong>Kafka advertises exactly-once. Is that a lie?</strong> No, but it is scoped: idempotent
+            producers plus transactions give effectively-once processing inside a Kafka-to-Kafka pipeline; the
+            moment you write to an external store you are back to designing idempotent, fenced sinks.
+          </p>
+          <p className="text-ink-dim leading-relaxed">
+            <strong>Why does 2f+1 nodes tolerate exactly f failures?</strong> Commit and election both need a
+            majority, f+1 of 2f+1, which survives f losses, and any two majorities intersect, so a new leader's
+            voters always include someone who acked every committed entry.
+          </p>
+          <p className="text-ink-dim leading-relaxed">
+            <strong>When would you actually accept 2PC?</strong> Inside one latency and trust domain with a
+            highly available coordinator, XA within a single database estate, or Kafka's transaction
+            coordinator, and never across independently deployed services, where a stuck coordinator holds
+            everyone's locks.
+          </p>
+          <p className="text-ink-dim leading-relaxed">
+            <strong>Your Spark job writes two tables and dies between them. Design around it.</strong> Saga
+            thinking without the drama: make both writes idempotent (overwrite by partition or MERGE by key),
+            stamp the run with a watermark or run id, re-run the whole job on failure, and have readers gate on
+            the watermark so nobody consumes the half-written state.
+          </p>
+        </div>
+      </Block>
+
+      <Block eyebrow="say it cleanly" title="The interview answer">
+        <Callout kind="tip" title="The 30-second version">
+          "CAP is the first rung; the real ladder runs linearizable, sequential, causal, session guarantees
+          like read-your-writes, then eventual, and most features need a session guarantee, not
+          linearizability. For multi-node writes, 2PC blocks if the coordinator dies holding locks, so services
+          use sagas and pipelines use idempotent stages plus replay. Quorums are arithmetic: R plus W greater
+          than N buys overlap, and sloppy quorums trade that away for availability. Raft elects a leader and
+          commits log entries on majority ack. And exactly-once delivery is impossible, so I build
+          effectively-once processing with idempotent, fenced writes."
+        </Callout>
+        <Callout kind="note" title="The 2-minute expansion">
+          "Below 'strong vs eventual' there is a ladder: linearizable means every read sees the single latest
+          value, as if there were one copy; causal means effects never appear before their causes; and the
+          session guarantees, read-your-writes and monotonic reads, are what products usually need, which
+          matters because each rung down buys latency and availability. For coordinating writes across nodes,
+          two-phase commit gives atomicity but blocks: participants that voted yes must hold locks until a
+          crashed coordinator returns, which is why nobody runs 2PC across microservices; sagas replace it with
+          local transactions plus compensating actions, and data pipelines replace it with idempotent stages
+          and replay. Quorum systems make the trade tunable: with N of 3, W=2 R=2 guarantees overlap and rides
+          out one node; W=3 R=1 makes reads cheap and writes fragile; W=1 R=1 is fast and stale; and
+          Dynamo-style sloppy quorums with hinted handoff keep accepting writes during partitions by giving up
+          the overlap guarantee. Underneath the coordinated systems sits consensus: Raft elects a leader by
+          majority, replicates a log, and commits on majority ack, that is etcd, ZooKeeper's ZAB, and Kafka's
+          KRaft controllers, the layer my catalogs and locks rest on. And on delivery semantics I am precise:
+          exactly-once delivery is impossible because lost acks force retries, so I engineer effectively-once
+          processing, idempotent MERGE-style writes, transactional sinks that commit offsets with output, and
+          fencing tokens so a zombie writer that lost its lease cannot corrupt the result."
+        </Callout>
+      </Block>
+    </>
+  );
+}
+
+/* ── Rapid fire · self-test ───────────────────────────────────── */
+const DECK = [
+  { q: "Why does NOT IN (subquery) sometimes return zero rows even when non-matching rows clearly exist?", a: "If the subquery returns any NULL, x NOT IN (...) expands to x <> a AND x <> NULL, and comparing to NULL is UNKNOWN, so no row ever qualifies. Use NOT EXISTS, which handles NULLs correctly.", tag: "sql" },
+  { q: "ROW_NUMBER vs RANK vs DENSE_RANK on the values 10, 10, 9?", a: "ROW_NUMBER: 1, 2, 3, always unique, the dedup tool. RANK: 1, 1, 3, ties share then skip. DENSE_RANK: 1, 1, 2, ties share without skipping.", tag: "windows" },
+  { q: "WHERE vs HAVING in one breath.", a: "WHERE filters individual rows before grouping and cannot see aggregates; HAVING filters whole groups after aggregation, so COUNT(*) > 5 belongs in HAVING.", tag: "sql" },
+  { q: "You wrote SUM(x) OVER (ORDER BY d) with no frame. ROWS or RANGE, and why does it matter?", a: "The default is RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW, which includes all peer rows tied on the ORDER BY value, so tied rows share the same running total. ROWS counts physical rows and splits ties.", tag: "windows" },
+  { q: "Your revenue total doubled after adding a join. What happened?", a: "Join fan-out: the key is one-to-many, so each one-side row is duplicated per match and its amount is summed repeatedly. Pre-aggregate the many side to one row per key before joining.", tag: "sql" },
+  { q: "B-tree index vs zone map, when does each win?", a: "A B-tree is a row-store structure for O(log n) point and range seeks, the OLTP fast path. A zone map is per-block min/max metadata a columnar engine uses to skip whole blocks, the OLAP fast path: seek rows vs skip bytes.", tag: "tuning" },
+  { q: "State CAP correctly, not as 'pick two.'", a: "Partitions will happen, so P is forced. The only real choice is between consistency and availability, and only while a partition is active; on a healthy network you can have both.", tag: "distributed" },
+  { q: "What does PACELC add over CAP?", a: "The else branch: if Partition, choose A or C; Else, choose Latency or Consistency. Even with no partition, strong consistency costs coordination round-trips on every write.", tag: "distributed" },
+  { q: "Why does R + W > N guarantee a read sees the latest write?", a: "With N replicas, any W-node write set and any R-node read set must overlap in at least one node when R + W > N, so at least one replica in every read holds the newest value.", tag: "distributed" },
+  { q: "What problem does consistent hashing solve over hash(key) mod N?", a: "Changing N under mod-N remaps almost every key. On a hash ring, a key belongs to the next node clockwise, so adding or removing a node moves only about 1/N of the keys; virtual nodes smooth the balance.", tag: "sharding" },
+  { q: "Why did Spark replace MapReduce?", a: "MapReduce materializes every stage to disk, so multi-pass and iterative jobs pay a huge I/O tax. Spark keeps intermediate data in memory and chains stages into one lazily optimized DAG, dramatically faster for the same shuffle skeleton.", tag: "engines" },
+  { q: "Dictionary encoding vs run-length encoding, one line each.", a: "Dictionary stores each distinct value once and replaces cells with small integer ids, huge on low-cardinality columns. RLE stores value times run count, brilliant on sorted or repetitive columns.", tag: "storage" },
+  { q: "One 4 GB gzipped CSV vs the same data as Snappy Parquet, what happens to parallelism?", a: "Raw gzip is not splittable, so one task reads the whole 4 GB alone. Parquet compresses per block, so the file stays splittable and every row group is read in parallel, whatever the codec.", tag: "storage" },
+  { q: "Dirty read vs non-repeatable read vs phantom read.", a: "Dirty: reading another transaction's uncommitted write. Non-repeatable: the same row returns different values across two reads in one transaction. Phantom: a re-run range query returns new rows matching the predicate.", tag: "acid" },
+  { q: "Define write skew and name the level that stops it.", a: "Two transactions read overlapping data, then write disjoint rows; no write-write conflict fires, yet the combined result matches no serial order. Snapshot isolation permits it; only SERIALIZABLE stops it.", tag: "acid" },
+  { q: "What is the blocking flaw in two-phase commit?", a: "If the coordinator dies after participants voted yes in prepare, they can neither commit nor abort unilaterally and must hold their locks until it returns. That blocking window is why cross-service 2PC is avoided.", tag: "consensus" },
+  { q: "How does a saga replace a distributed transaction?", a: "A chain of local transactions, each paired with a compensating action; on failure the compensations run in reverse. You give up isolation, intermediate states are visible to other readers.", tag: "consensus" },
+  { q: "What is a fencing token and what failure does it prevent?", a: "A monotonically increasing token issued with each lock or lease; the storage layer rejects writes bearing an older token. It stops a paused or zombie writer that lost its lease from corrupting state when it resumes.", tag: "consensus" },
+  { q: "'Iceberg gives me ACID like Postgres.' Correct the claim.", a: "Iceberg gives single-table snapshot isolation via an atomic compare-and-swap of the catalog pointer. No multi-table or interactive transactions, and it is optimistic snapshot isolation, not serializable sessions, so it is wrong on both scope and isolation model.", tag: "acid" },
+  { q: "Raft in one sentence.", a: "A majority elects a leader, all writes append to the leader's replicated log, and an entry commits once a majority acks; because any two majorities overlap, a new leader always holds every committed entry.", tag: "consensus" },
+];
+
+function QuickfireDrill() {
+  return (
+    <>
+      <Lede>
+        Twenty cards spanning the whole tool, joins and window frames to quorum math and write skew. The rep
+        that works: read the question, answer <strong>out loud</strong> in one or two sentences before
+        revealing, then grade yourself honestly. Shuffle between runs so you are drilling recall, not card
+        order, and anything you miss twice, go re-read the topic behind it.
+      </Lede>
+      <Try label="rapid fire"><QuickFire accent={ACCENT} deck={DECK} /></Try>
+    </>
+  );
+}
+
 const CONTENT = {
   sqljoins: <SqlJoins />,
   windows: <Windows />,
@@ -1020,6 +1497,9 @@ const CONTENT = {
   mapreduce: <MapReduce />,
   columnar: <Columnar />,
   compression: <Compression />,
+  acid: <Acid />,
+  consensus: <Consensus />,
+  quickfire: <QuickfireDrill />,
 };
 
 export default function DataFoundations() {
