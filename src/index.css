@@ -41,6 +41,13 @@
   --color-sqlgym: #f7c948;
   --color-behavioral: #d97cf6;
 
+  /* Per-tool accents, Software / Solutions Architect track */
+  --color-whiteboard: #4aa3ff;
+  --color-patterns: #f26d9c;
+  --color-apiint: #8b7cff;
+  --color-archrole: #2fbf8f;
+  --color-archfund: #c9a23f;
+
   /* Semantic accents for callouts */
   --color-tip: #4ade80;
   --color-warn: #fbbf24;

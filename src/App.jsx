@@ -17,6 +17,11 @@ import DataFoundations from "./tools/DataFoundations.jsx";
 import SqlGym from "./tools/SqlGym.jsx";
 import DesignRoom from "./tools/DesignRoom.jsx";
 import BehavioralBench from "./tools/BehavioralBench.jsx";
+import Whiteboard from "./tools/Whiteboard.jsx";
+import PatternsBench from "./tools/PatternsBench.jsx";
+import ApiIntegration from "./tools/ApiIntegration.jsx";
+import ArchitectRole from "./tools/ArchitectRole.jsx";
+import ArchFundamentals from "./tools/ArchFundamentals.jsx";
 
 export const TOOLS = [
   {
@@ -189,6 +194,56 @@ export const TOOLS = [
     status: "ready",
     Comp: BehavioralBench,
   },
+  {
+    path: "whiteboard",
+    track: "arch",
+    name: "The Whiteboard",
+    tag: "The design round · LIVE",
+    desc: "Seven classic system designs (URL shortener, feed, chat, ride-share, notifications, payments, rate limiter) run end to end, plus the reusable framework.",
+    accent: "#4aa3ff",
+    status: "ready",
+    Comp: Whiteboard,
+  },
+  {
+    path: "patterns",
+    track: "arch",
+    name: "Architecture Patterns & Resilience",
+    tag: "Styles & resilience · the HOW",
+    desc: "Monolith to microservices, hexagonal, CQRS / event sourcing, saga, service mesh, and the resilience patterns that keep a system standing under failure.",
+    accent: "#f26d9c",
+    status: "ready",
+    Comp: PatternsBench,
+  },
+  {
+    path: "api-integration",
+    track: "arch",
+    name: "API & Integration",
+    tag: "Contracts · the INTERFACES",
+    desc: "REST vs gRPC vs GraphQL, versioning and backward-compat, idempotency keys, queue-vs-topic, and the outbox pattern for reliable integration.",
+    accent: "#8b7cff",
+    status: "ready",
+    Comp: ApiIntegration,
+  },
+  {
+    path: "architect-role",
+    track: "arch",
+    name: "Architect's Role & Decisions",
+    tag: "Decisions & leadership · SHOULD WE",
+    desc: "Quality attributes, SLOs, domain-driven design, cloud / Well-Architected, migration, ADRs, and architect-leadership STAR.",
+    accent: "#2fbf8f",
+    status: "ready",
+    Comp: ArchitectRole,
+  },
+  {
+    path: "arch-fundamentals",
+    track: "arch",
+    name: "Architecture Fundamentals",
+    tag: "Building blocks · the BEDROCK",
+    desc: "Load balancing, caching, sharding, replication, indexing, queues, and consistency, the pieces every design is assembled from.",
+    accent: "#c9a23f",
+    status: "ready",
+    Comp: ArchFundamentals,
+  },
 ];
 
 const TRACKS = [
@@ -209,6 +264,12 @@ const TRACKS = [
     label: "Data Architect · interview prep",
     blurb:
       "The AWS data-platform interview end to end: Spark internals, the EMR and S3 stack, the lakehouse and modeling, the judgment calls, plus live SQL and modeling drills, the 45-minute design round, and behavioral prep.",
+  },
+  {
+    id: "arch",
+    label: "Software / Solutions Architect · interview prep",
+    blurb:
+      "The general architecture interview: the system-design round on classic products, the styles-and-resilience patterns, API and integration contracts, the role-level decisions and leadership, and the building blocks underneath.",
   },
 ];
 
@@ -263,9 +324,10 @@ function Landing() {
           Interview Labs
         </h1>
         <p className="text-lg text-ink-dim max-w-2xl leading-relaxed mb-14">
-          Three tracks of interactive tools, classic <span className="text-ink">DSA</span>,{" "}
-          <span className="text-ink">AI architecture</span>, and{" "}
-          <span className="text-ink">data engineering</span>, each built to{" "}
+          Four tracks of interactive tools, classic <span className="text-ink">DSA</span>,{" "}
+          <span className="text-ink">AI architecture</span>,{" "}
+          <span className="text-ink">data engineering</span>, and{" "}
+          <span className="text-ink">software architecture</span>, each built to{" "}
           <span className="text-ink">grasp the concept</span>, not just memorize it.
         </p>
 
