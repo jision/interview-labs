@@ -48,6 +48,15 @@
   --color-archrole: #2fbf8f;
   --color-archfund: #c9a23f;
 
+  /* Per-tool accents, Google Cloud Staff (L6) track */
+  --color-mission: #4285f4;
+  --color-gcpdesign: #ea4335;
+  --color-srecanon: #f9ab00;
+  --color-gcoding: #34a853;
+  --color-googleyness: #a142f4;
+  --color-questionbank: #12b5cb;
+  --color-mockdrills: #e37400;
+
   /* Semantic accents for callouts */
   --color-tip: #4ade80;
   --color-warn: #fbbf24;

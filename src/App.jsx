@@ -22,6 +22,13 @@ import PatternsBench from "./tools/PatternsBench.jsx";
 import ApiIntegration from "./tools/ApiIntegration.jsx";
 import ArchitectRole from "./tools/ArchitectRole.jsx";
 import ArchFundamentals from "./tools/ArchFundamentals.jsx";
+import MissionControl from "./tools/MissionControl.jsx";
+import GcpDesign from "./tools/GcpDesign.jsx";
+import SreCanon from "./tools/SreCanon.jsx";
+import GoogleCoding from "./tools/GoogleCoding.jsx";
+import Googleyness from "./tools/Googleyness.jsx";
+import QuestionBank from "./tools/QuestionBank.jsx";
+import MockDrills from "./tools/MockDrills.jsx";
 
 export const TOOLS = [
   {
@@ -244,6 +251,76 @@ export const TOOLS = [
     status: "ready",
     Comp: ArchFundamentals,
   },
+  {
+    path: "mission-control",
+    track: "google",
+    name: "Mission Control",
+    tag: "The loop & 21-day plan · ORIENT",
+    desc: "How the L6 loop actually works, the four attributes read across rounds, the hiring-committee packet, and the corrected 21-day operating plan with a progress tracker and mock scorecard.",
+    accent: "#4285F4",
+    status: "ready",
+    Comp: MissionControl,
+  },
+  {
+    path: "gcp-design",
+    track: "google",
+    name: "GCP System Design",
+    tag: "The design rounds · DESIGN IT",
+    desc: "The Google design framework plus ten worked one-page sheets on the real systems an L6 infra round expects you to name and reason about: Monarch, Doorman, Borg, Chubby, Colossus, Dataflow, and Spanner.",
+    accent: "#EA4335",
+    status: "ready",
+    Comp: GcpDesign,
+  },
+  {
+    path: "sre-canon",
+    track: "google",
+    name: "The SRE Canon",
+    tag: "Reliability · THE GOOGLE EDGE",
+    desc: "The handful of Google SRE ideas that separate a Staff answer from a senior one: error budgets, overload and load-shedding, cascading failures and retry amplification, consensus, and data integrity.",
+    accent: "#F9AB00",
+    status: "ready",
+    Comp: SreCanon,
+  },
+  {
+    path: "google-coding",
+    track: "google",
+    name: "Coding for Google",
+    tag: "The coding bar · THE REPS",
+    desc: "How Google scores coding, a reuse map into the DSA drills you already have, and the seven patterns worth adding: union-find, LCA, tree serialization, topological sort and Dijkstra, binary search on the answer, prefix and difference arrays, and data-structure design.",
+    accent: "#34A853",
+    status: "ready",
+    Comp: GoogleCoding,
+  },
+  {
+    path: "googleyness",
+    track: "google",
+    name: "Googleyness & Deep Dives",
+    tag: "The human rounds · WHO YOU ARE",
+    desc: "The project deep-dive and the combined Googleyness and Leadership round at Staff scope, with a story matrix and the I-vs-we discipline that keeps you from getting downleveled.",
+    accent: "#A142F4",
+    status: "ready",
+    Comp: Googleyness,
+  },
+  {
+    path: "question-bank",
+    track: "google",
+    name: "The Question Bank",
+    tag: "Real questions · DRILL IT",
+    desc: "Sixty-nine reported coding questions with worked solution ideas and complexity, twenty system-design prompts, thirty-one behavioral questions, and flashcard decks to drill them all to reflex.",
+    accent: "#12B5CB",
+    status: "ready",
+    Comp: QuestionBank,
+  },
+  {
+    path: "mock-drills",
+    track: "google",
+    name: "Mock Drills",
+    tag: "Simulate it · UNDER THE CLOCK",
+    desc: "Run the loop on yourself: timed coding, design, and behavioral mocks with a phase timer, scoring rubrics, and ready-to-run prompt banks.",
+    accent: "#E37400",
+    status: "ready",
+    Comp: MockDrills,
+  },
 ];
 
 const TRACKS = [
@@ -270,6 +347,12 @@ const TRACKS = [
     label: "Software / Solutions Architect · interview prep",
     blurb:
       "The general architecture interview: the system-design round on classic products, the styles-and-resilience patterns, API and integration contracts, the role-level decisions and leadership, and the building blocks underneath.",
+  },
+  {
+    id: "google",
+    label: "Google Cloud Staff (L6) · interview prep",
+    blurb:
+      "The Staff Software Engineer, Google Cloud loop: how Google scores a coding round, a reuse map onto the DSA drills you already have, and the handful of patterns a Google interview leans on that a generic list under-teaches.",
   },
 ];
 
@@ -324,10 +407,11 @@ function Landing() {
           Interview Labs
         </h1>
         <p className="text-lg text-ink-dim max-w-2xl leading-relaxed mb-14">
-          Four tracks of interactive tools, classic <span className="text-ink">DSA</span>,{" "}
+          Five tracks of interactive tools, classic <span className="text-ink">DSA</span>,{" "}
           <span className="text-ink">AI architecture</span>,{" "}
-          <span className="text-ink">data engineering</span>, and{" "}
-          <span className="text-ink">software architecture</span>, each built to{" "}
+          <span className="text-ink">data engineering</span>,{" "}
+          <span className="text-ink">software architecture</span>, and a{" "}
+          <span className="text-ink">Google Cloud Staff (L6)</span> loop, each built to{" "}
           <span className="text-ink">grasp the concept</span>, not just memorize it.
         </p>
 
